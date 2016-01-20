@@ -25,13 +25,9 @@
         font-size: .8em;
         padding: 1em;
         }
-        .video-item {
-        border: 1px solid #999;
-        margin: 0;
-        padding: 0;
-        height: 74px;
-        width: 480px;
-        overflow: scroll;
+        .fields {
+            margin: .5em;
+            display: block;
         }
         textarea {
             width: 100%;
@@ -40,12 +36,14 @@
     </head>
     <body>
         <h1>Analytics for Recently Added Videos</h1>
-        <p>This app gets Analytics data for videos that have been added to Video Cloud over some recent period (which you define in the inputs).</p>
+        <p>This app gets Analytics data for videos that have been added to Video Cloud over some recent period (which you define in the inputs). Note that this app only returns reports on a single dimension, though it could be modified to report on multiple dimensions.</p>
         <fieldset>
             <legend>Inputs</legend>
             <p><strong>Account id:</strong> <input id="account_id" type="text"></p>
             <p><strong>Client id:</strong> <input id="client_id" type="text"></p>
             <p><strong>Client secret:</strong> <input id="client_secret" type="text"></p>
+            <p>Dimension to report on: <select name="dimensionSelect" id="dimensionSelect"></select></p>
+            <p id="returnFields">Fields to return:<br></p>
             <p><button id="getData">Get Analytics Data</button></p>
         </fieldset>
         <fieldset>
@@ -61,8 +59,9 @@
                 <p><strong>Response data</strong></p>
             <pre id="responseData"></pre>
         </fieldset>
+<script src="//docs.brightcove.com/en/video-cloud/analytics-api/assets/aapi-model.js"></script>
 <script>
-var BCLS = (function(window, document) {
+var BCLS = (function(window, document, aapi_model) {
   var baseURL                 = 'https://cms.api.brightcove.com/v1/accounts/',
       proxyURL                = 'https://solutions.brightcove.com/bcls/bcls-proxy/bcls-proxy.php',
       video_id                = '',
@@ -74,14 +73,16 @@ var BCLS = (function(window, document) {
       client_secret           = document.getElementById('client_secret'),
       count                   = document.getElementById('count'),
       allButtons              = document.getElementsByTagName('button'),
-      getData            = document.getElementById('getData'),
+      getData                 = document.getElementById('getData'),
+      dimensionSelect         = document.getElementById('dimensionSelect'),
+      returnFields            = document.getElementById('returnFields'),
       apiRequest              = document.getElementById('apiRequest'),
       apiData                 = document.getElementById('apiData'),
       apiMethod               = document.getElementById('apiMethod'),
       generatedContent        = document.getElementById('generatedContent'),
       responseData            = document.getElementById('responseData'),
       logger                  = document.getElementById('logger'),
-      text_tracks,
+      videoIds = [],
       i,
       iMax;
 
@@ -120,23 +121,15 @@ var BCLS = (function(window, document) {
     }
 
     /**
-     * changes protocol of URLs from http to https
-     * @param {Array} text_tracks array of text track objects
+     * adds dimension options from the aapi_model
      */
-    function changeProtocol(tracks) {
+    function addDimensionOptions() {
         var i,
-            iMax = tracks.length,
-            j,
-            jMax;
+            iMax = aapi_model.dimensions.length,
+            option,
+            text;
         for (i = 0; i < iMax; i += 1) {
-            tracks[i].src = tracks[i].src.replace('http://', '//');
-            if (isDefined(tracks[i].sources)) {
-                jMax = tracks[i].sources.length;
-                for (j = 0; j < jMax; j += 1) {
-                    tracks[i].sources[j].src = tracks[i].sources[j].src.replace('http://', '//');
-                }
-            }
-
+            option = document.createElement('option')
         }
         return tracks;
     }
@@ -267,7 +260,7 @@ var BCLS = (function(window, document) {
         baseURL += account_id.value;
         setRequestData('getCount');
     });
-})(window, document);
+})(window, document, aapi_model);
 </script>
 </body>
 </html>
