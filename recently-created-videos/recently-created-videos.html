@@ -40,11 +40,28 @@
         <fieldset>
             <legend>Inputs</legend>
             <p><strong>Account id:</strong> <input id="account_id" type="text"></p>
-            <p><strong>Client id:</strong> <input id="client_id" type="text"></p>
-            <p><strong>Client secret:</strong> <input id="client_secret" type="text"></p>
+            <p><strong>Client id:</strong> <input id="client_id" type="text" size="60"></p>
+            <p><strong>Client secret:</strong> <input id="client_secret" type="text" size="60"></p>
             <p>Dimension to report on: <select name="dimensionSelect" id="dimensionSelect"></select></p>
             <p id="returnFields">Fields to return:<br></p>
             <p><button id="getData">Get Analytics Data</button></p>
+            <p>Get videos created in the past
+                <select name="dateSelect" id="dateSelect">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="30" selected="selected">30</option>
+                    <option value="60">60</option>
+                    <option value="90">90</option>
+                    <option value="180">180</option>
+                    <option value="365">365</option>
+                </select>
+                days
+        </p>
         </fieldset>
         <fieldset>
             <legend>Outputs</legend>
