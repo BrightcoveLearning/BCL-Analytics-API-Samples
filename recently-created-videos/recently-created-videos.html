@@ -79,7 +79,8 @@
 <script src="//docs.brightcove.com/en/video-cloud/analytics-api/assets/aapi-model.js"></script>
 <script>
 var BCLS = (function(window, document, aapi_model) {
-  var baseURL                 = 'https://cms.api.brightcove.com/v1/accounts/',
+  var cmsBaseURL              = 'https://cms.api.brightcove.com/v1/accounts/',
+      aapiBaseURL              = 'https://analytics.api.brightcove.com/v1/data',
       proxyURL                = 'https://solutions.brightcove.com/bcls/bcls-proxy/bcls-proxy.php',
       videoIds                = [],
       fieldsToReturn          = [],
@@ -145,10 +146,21 @@ var BCLS = (function(window, document, aapi_model) {
     function addDimensionOptions() {
         var i,
             iMax = aapi_model.dimensions.length,
+            j,
+            jMax,
             option,
             text;
         for (i = 0; i < iMax; i += 1) {
-            option = document.createElement('option')
+            option = document.createElement('option');
+            text = document.createTextNode(aapi_model.dimensions[i].name);
+            option.appendChild(text);
+            if (aapi_model.dimensions[i].name === 'video') {
+                option.setAttribute('selected', 'selected');
+            }
+            // add option to selector
+            dimensionSelect.appendChild(option);
+            // add the return field options
+            jMax = aapi_model.dimensions[i].fields.length;
         }
         return tracks;
     }
