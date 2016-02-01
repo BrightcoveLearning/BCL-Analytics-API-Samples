@@ -119,6 +119,36 @@ var BCLS = (function(window, document, aapi_model) {
     };
 
     /**
+     * find index of an object in array of objects
+     * based on some property value
+     *
+     * @param {array} targetArray array to search
+     * @param {string} objProperty object property to search
+     * @param {string} value of the property to search for
+     * @return {integer} index of first instance if found, otherwise returns -1
+    */
+    function findObjectInArray(targetArray, objProperty, value) {
+        var i, totalItems = targetArray.length, objFound = false;
+        for (i = 0; i < totalItems; i++) {
+            if (targetArray[i][objProperty] === value) {
+                objFound = true;
+                return i;
+            }
+        }
+        if (objFound === false) {
+            return -1;
+        }
+    }
+
+    /**
+     * get selected value for single select element
+     * @param {htmlElement} e the select element
+     */
+    function getSelectedValue(e) {
+        return e.options[e.selectedIndex].value;
+    }
+
+    /**
      * disables all buttons so user can't submit new request until current one finishes
      */
     function disableButtons() {
@@ -177,6 +207,16 @@ var BCLS = (function(window, document, aapi_model) {
         }
         return;
     }
+
+    function addFieldOptions(dimension) {
+        var idx = findObjectInArray(aapi_model.dimensions, 'name', dimension),
+            i,
+            iMax,
+            input,
+            text,
+            br;
+    }
+
 
 
     /**
@@ -248,7 +288,7 @@ var BCLS = (function(window, document, aapi_model) {
                         console.log('count', videoCount);
                         count.textContent = 'Total videos: ' + videoCount;
                         setRequestData('get1video');
-                      } else if (requestID === 'get1video') {
+                    } else if (requestID === 'getVideos') {
                         responseRaw = httpRequest.responseText;
                         responseData.textContent = responseRaw;
                         parsedData = JSON.parse(responseRaw);
@@ -261,7 +301,7 @@ var BCLS = (function(window, document, aapi_model) {
                         //
                         logger.textContent = 'Processing ' + video_name;
                         setRequestData('getData');
-                      } else if (requestID === 'getData') {
+                    } else if (requestID === 'getAnalytics') {
                         responseRaw = httpRequest.responseText;
                         responseData.textContent = responseRaw;
                         // increment offset
@@ -304,6 +344,10 @@ var BCLS = (function(window, document, aapi_model) {
         baseURL += account_id.value;
         setRequestData('getCount');
     });
+
+    function init() {
+
+    }
 })(window, document, aapi_model);
 </script>
 </body>
