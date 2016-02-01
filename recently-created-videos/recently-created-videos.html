@@ -44,7 +44,6 @@
             <p><strong>Client secret:</strong> <input id="client_secret" type="text" size="60"></p>
             <p>Dimension to report on: <select name="dimensionSelect" id="dimensionSelect"></select></p>
             <p id="returnFields">Fields to return:<br></p>
-            <p><button id="getData">Get Analytics Data</button></p>
             <p>Get videos created in the past
                 <select name="dateSelect" id="dateSelect">
                     <option value="1">1</option>
@@ -62,6 +61,7 @@
                 </select>
                 days
         </p>
+        <p><button id="getData">Get Analytics Data</button></p>
         </fieldset>
         <fieldset>
             <legend>Outputs</legend>
@@ -80,17 +80,22 @@
 <script>
 var BCLS = (function(window, document, aapi_model) {
   var cmsBaseURL              = 'https://cms.api.brightcove.com/v1/accounts/',
-      aapiBaseURL              = 'https://analytics.api.brightcove.com/v1/data',
+      aapiBaseURL             = 'https://analytics.api.brightcove.com/v1/data',
       proxyURL                = 'https://solutions.brightcove.com/bcls/bcls-proxy/bcls-proxy.php',
       videoIds                = [],
       fieldsToReturn          = [],
       offset                  = 0,
       videoCount              = 0,
+      accountId,
+      clientId,
+      clientSecret,
+      dateString,
       account_id              = document.getElementById('account_id'),
       client_id               = document.getElementById('client_id'),
       client_secret           = document.getElementById('client_secret'),
       dimensionSelect         = document.getElementById('dimensionSelect'),
       returnFields            = document.getElementById('returnFields'),
+      dateSelect              = document.getElementById('dateSelect'),
       count                   = document.getElementById('count'),
       allButtons              = document.getElementsByTagName('button'),
       getData                 = document.getElementById('getData'),
@@ -346,12 +351,22 @@ var BCLS = (function(window, document, aapi_model) {
     }
     // event listeners
     getData.addEventListener('click', function() {
-        baseURL += account_id.value;
+        if (!isDefined(account_id.value) || !isDefined(client_id) || !isDefined(client_secret)) {
+            window.alert('You must enter an account id, a client id, and a client secret');
+            return;
+        }
+        accountId = account_id.value;
+        clientId = client_id.value;
+        clientSecret = client_secret.value;
         setRequestData('getCount');
     });
     dimensionSelect.addEventListener('change', function() {
         addFieldOptions();
     });
+    dateSelect.addEventListener('change', function() {
+        var selectedValue = getSelectedValue(dateSelect);
+        dateString = 'q=created_at:%2D' + selectedValue + 'd..';
+    })
 
     function init() {
         console.log('init');
