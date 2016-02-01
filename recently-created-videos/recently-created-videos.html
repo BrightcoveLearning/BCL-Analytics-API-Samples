@@ -182,42 +182,47 @@ var BCLS = (function(window, document, aapi_model) {
             input,
             br,
             text;
+        console.log('adding dimensions');
         for (i = 0; i < iMax; i += 1) {
             option = document.createElement('option');
             text = document.createTextNode(aapi_model.dimensions[i].name);
             option.appendChild(text);
             if (aapi_model.dimensions[i].name === 'video') {
                 option.setAttribute('selected', 'selected');
+                addFieldOptions(i);
             }
             // add option to selector
             dimensionSelect.appendChild(option);
-            // add the return field options
-            jMax = aapi_model.dimensions[i].fields.length;
-            for (j = 0; j < jMax; j += 1) {
-                input = document.createElement('input');
-                input.setAttribute('name', 'fieldsChk');
-                input.setAttribute('type', 'checkbox');
-                input.setAttribute('value', aapi_model.dimensions[i].fields[j]);
-                text = document.createTextNode(' ' + aapi_model.dimensions[i].fields[j]);
-                br = document.createElement('br');
-                returnFields.appendChild(input);
-                returnFields.appendChild(text);
-                returnFields.appendChild(br);
-            }
         }
         return;
     }
 
-    function addFieldOptions(dimension) {
-        var idx = findObjectInArray(aapi_model.dimensions, 'name', dimension),
-            i,
+    /**
+     * addFieldOptions generates checkboxes for each field
+     * available for the selected dimension
+     *
+     * @ {Number} idx the index of the dimension object in the aapi_model
+     */
+    function addFieldOptions(idx) {
+        var i,
             iMax,
             input,
             text,
             br;
+        // add the return field options
+        iMax = aapi_model.dimensions[idx].fields.length;
+        for (i = 0; i < iMax; i += 1) {
+            input = document.createElement('input');
+            input.setAttribute('name', 'fieldsChk');
+            input.setAttribute('type', 'checkbox');
+            input.setAttribute('value', aapi_model.dimensions[idx].fields[i]);
+            text = document.createTextNode(' ' + aapi_model.dimensions[idx].fields[i]);
+            br = document.createElement('br');
+            returnFields.appendChild(input);
+            returnFields.appendChild(text);
+            returnFields.appendChild(br);
+        }
     }
-
-
 
     /**
      * sets up the data for the API request
@@ -344,10 +349,16 @@ var BCLS = (function(window, document, aapi_model) {
         baseURL += account_id.value;
         setRequestData('getCount');
     });
+    dimensionSelect.addEventListener('change', function() {
+        addFieldOptions();
+    });
 
     function init() {
-
+        console.log('init');
+        addDimensionOptions();
     }
+
+    init();
 })(window, document, aapi_model);
 </script>
 </body>
