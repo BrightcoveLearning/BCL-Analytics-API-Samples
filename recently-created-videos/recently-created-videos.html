@@ -83,13 +83,16 @@ var BCLS = (function(window, document, aapi_model) {
       aapiBaseURL             = 'https://analytics.api.brightcove.com/v1/data',
       proxyURL                = 'https://solutions.brightcove.com/bcls/bcls-proxy/bcls-proxy.php',
       videoIds                = [],
+      videoIdSets             = [],
       fieldsToReturn          = [],
-      offset                  = 0,
       videoCount              = 0,
+      totalVideoCalls         = 0,
+      videoCallNumber         = 0,
       accountId,
       clientId,
       clientSecret,
-      dateString,
+      searchString,
+      pageSize                = 25,
       account_id              = document.getElementById('account_id'),
       client_id               = document.getElementById('client_id'),
       client_secret           = document.getElementById('client_secret'),
@@ -230,25 +233,45 @@ var BCLS = (function(window, document, aapi_model) {
     }
 
     /**
+     * splitVideoIdsIntoSets - splits the videoIds array into
+     * sets of 100 or less (because you can only get analytics
+     * on about 100 videos at a time without exceeding the maximum
+     * url length for the Analytics API request)
+     */
+    function splitVideoIdsIntoSets() {
+        var tmpArray = [];
+        // grab the first 100 as a new array, push into sets array
+        tmpArray = videoIds.splice(0, 100);
+        videoIdSets.push(tmpArray);
+        // function recalls itself until videoIds array is empty
+        if (videoIds.length > 0) {
+            splitVideoIdsIntoSets();
+        } else {
+            return;
+        }
+    }
+
+    /**
      * sets up the data for the API request
-     * @param {String} id the id of the button that was clicked
+     * @param {String="getCount","getVideos","getData"} id the id for the call type
      */
     function setRequestData(id) {
-        var endPoint = '',
-            requestData = {};
+        var endPoint = searchString,
+            requestData = {},
+            baseURL = cmsBaseURL + accountId + '/videos?';
         // disable buttons to prevent a new request before current one finishes
         disableButtons();
         switch (id) {
             case 'getCount':
-                endPoint = '/counts/videos';
+                endPoint = '/counts/videos' + searchString;
                 requestData.url = baseURL + endPoint;
                 requestData.requestType = 'GET';
                 apiRequest.textContent = requestData.url;
                 apiMethod.textContent = requestData.requestType;
                 getMediaData(requestData, id);
                 break;
-            case 'get1video':
-                endPoint = '/videos?limit=1&sort=created_at&offset=' + offset;
+            case 'getVideos':
+                endPoint = '/videos' + searchString + '&limit=' + pageSize + '&sort=created_at&offset=' + pageSize * videoCallNumber;
                 requestData.url = baseURL + endPoint;
                 requestData.requestType = 'GET';
                 apiRequest.textContent = requestData.url;
@@ -295,9 +318,11 @@ var BCLS = (function(window, document, aapi_model) {
                         parsedData = JSON.parse(responseRaw);
                         // set total videos
                         videoCount = parsedData.count;
+                        // calulate total video calls
+                        totalVideoCalls = Math.ceil(videoCount / pageSize);
                         console.log('count', videoCount);
                         count.textContent = 'Total videos: ' + videoCount;
-                        setRequestData('get1video');
+                        setRequestData('getVideos');
                     } else if (requestID === 'getVideos') {
                         responseRaw = httpRequest.responseText;
                         responseData.textContent = responseRaw;
@@ -334,7 +359,7 @@ var BCLS = (function(window, document, aapi_model) {
                 }
             };
         // set up request data
-        requestParams = 'url=' + encodeURIComponent(options.url) + '&requestType=' + options.requestType + '&client_id=' + client_id.value + '&client_secret=' + client_secret.value;
+        requestParams = 'url=' + encodeURIComponent(options.url) + '&requestType=' + options.requestType + '&client_id=' + clientId + '&client_secret=' + clientSecret;
         if (options.requestBody) {
             dataString = JSON.stringify(options.requestBody);
             requestParams += "&requestBody=" + encodeURIComponent(dataString);
@@ -355,9 +380,11 @@ var BCLS = (function(window, document, aapi_model) {
             window.alert('You must enter an account id, a client id, and a client secret');
             return;
         }
+        // get account values
         accountId = account_id.value;
         clientId = client_id.value;
         clientSecret = client_secret.value;
+        // get the video count
         setRequestData('getCount');
     });
     dimensionSelect.addEventListener('change', function() {
@@ -365,7 +392,7 @@ var BCLS = (function(window, document, aapi_model) {
     });
     dateSelect.addEventListener('change', function() {
         var selectedValue = getSelectedValue(dateSelect);
-        dateString = 'q=created_at:%2D' + selectedValue + 'd..';
+        searchString = 'q=created_at:%2D' + selectedValue + 'd..';
     })
 
     function init() {
