@@ -25,9 +25,11 @@
         font-size: .8em;
         padding: 1em;
         }
-        .fields {
-            margin: .5em;
-            display: block;
+        .fields-list {
+            border: 1px solid #ccc;
+            display: inline-block;
+            padding: .5em;
+            vertical-align: top;
         }
         textarea {
             width: 100%;
@@ -44,6 +46,8 @@
             <p><strong>Client secret:</strong> <input id="client_secret" type="text" size="60"></p>
             <p>Dimension to report on: <select name="dimensionSelect" id="dimensionSelect"></select></p>
             <p id="returnFields">Fields to return:<br></p>
+            <div id="fieldsCol1" class="fields-list"></div>
+            <div id="fieldsCol2" class="fields-list"></div>
             <p>Get videos created in the past
                 <select name="dateSelect" id="dateSelect">
                     <option value="1">1</option>
@@ -84,10 +88,13 @@ var BCLS = (function(window, document, aapi_model) {
       proxyURL                = 'https://solutions.brightcove.com/bcls/bcls-proxy/bcls-proxy.php',
       videoIds                = [],
       videoIdSets             = [],
+      dimension,
       fieldsToReturn          = [],
       videoCount              = 0,
       totalVideoCalls         = 0,
       videoCallNumber         = 0,
+      totalAnalyticsCalls     = 0,
+      analyticsCallNumber     = 0,
       accountId,
       clientId,
       clientSecret,
@@ -98,12 +105,12 @@ var BCLS = (function(window, document, aapi_model) {
       client_secret           = document.getElementById('client_secret'),
       dimensionSelect         = document.getElementById('dimensionSelect'),
       returnFields            = document.getElementById('returnFields'),
+      fieldsCol1              = document.getElementById('fieldsCol1'),
+      fieldsCol2              = document.getElementById('fieldsCol2'),
       dateSelect              = document.getElementById('dateSelect'),
       count                   = document.getElementById('count'),
       allButtons              = document.getElementsByTagName('button'),
       getData                 = document.getElementById('getData'),
-      dimensionSelect         = document.getElementById('dimensionSelect'),
-      returnFields            = document.getElementById('returnFields'),
       apiRequest              = document.getElementById('apiRequest'),
       apiData                 = document.getElementById('apiData'),
       apiMethod               = document.getElementById('apiMethod'),
@@ -127,33 +134,16 @@ var BCLS = (function(window, document, aapi_model) {
     };
 
     /**
-     * find index of an object in array of objects
-     * based on some property value
-     *
-     * @param {array} targetArray array to search
-     * @param {string} objProperty object property to search
-     * @param {string} value of the property to search for
-     * @return {integer} index of first instance if found, otherwise returns -1
-    */
-    function findObjectInArray(targetArray, objProperty, value) {
-        var i, totalItems = targetArray.length, objFound = false;
-        for (i = 0; i < totalItems; i++) {
-            if (targetArray[i][objProperty] === value) {
-                objFound = true;
-                return i;
-            }
-        }
-        if (objFound === false) {
-            return -1;
-        }
-    }
-
-    /**
      * get selected value for single select element
      * @param {htmlElement} e the select element
      */
     function getSelectedValue(e) {
-        return e.options[e.selectedIndex].value;
+        var val = e.options[e.selectedIndex].value,
+            idx = e.selectedIndex;
+        return {
+            value: val,
+            index: idx
+        }
     }
 
     /**
@@ -216,19 +206,33 @@ var BCLS = (function(window, document, aapi_model) {
             iMax,
             input,
             text,
-            br;
+            br,
+            half;
+        console.log('idx', idx);
         // add the return field options
         iMax = aapi_model.dimensions[idx].fields.length;
-        for (i = 0; i < iMax; i += 1) {
+        half = Math.ceil(iMax / 2);
+        for (i = 0; i < half; i += 1) {
             input = document.createElement('input');
             input.setAttribute('name', 'fieldsChk');
             input.setAttribute('type', 'checkbox');
             input.setAttribute('value', aapi_model.dimensions[idx].fields[i]);
             text = document.createTextNode(' ' + aapi_model.dimensions[idx].fields[i]);
             br = document.createElement('br');
-            returnFields.appendChild(input);
-            returnFields.appendChild(text);
-            returnFields.appendChild(br);
+            fieldsCol1.appendChild(input);
+            fieldsCol1.appendChild(text);
+            fieldsCol1.appendChild(br);
+        }
+        for (i = half; i < iMax; i += 1) {
+            input = document.createElement('input');
+            input.setAttribute('name', 'fieldsChk');
+            input.setAttribute('type', 'checkbox');
+            input.setAttribute('value', aapi_model.dimensions[idx].fields[i]);
+            text = document.createTextNode(' ' + aapi_model.dimensions[idx].fields[i]);
+            br = document.createElement('br');
+            fieldsCol2.appendChild(input);
+            fieldsCol2.appendChild(text);
+            fieldsCol2.appendChild(br);
         }
     }
 
@@ -278,7 +282,7 @@ var BCLS = (function(window, document, aapi_model) {
                 apiMethod.textContent = requestData.requestType;
                 getMediaData(requestData, id);
                 break;
-            case 'getData':
+            case 'getAnalytics':
                 endPoint = '/videos/' + video_id;
                 requestData.url = baseURL + endPoint;
                 requestData.requestType = 'PATCH';
@@ -302,6 +306,8 @@ var BCLS = (function(window, document, aapi_model) {
             parsedData,
             requestParams,
             dataString,
+            i,
+            iMax,
             // response handler
             getResponse = function() {
                 try {
@@ -327,27 +333,26 @@ var BCLS = (function(window, document, aapi_model) {
                         responseRaw = httpRequest.responseText;
                         responseData.textContent = responseRaw;
                         parsedData = JSON.parse(responseRaw);
-                        // set the video id for the update
-                        video_id = parsedData[0].id;
-                        video_name = parsedData[0].name;
-                        text_tracks = parsedData[0].text_tracks;
-                        console.log('text_tracks', text_tracks);
-                        text_tracks = changeProtocol(text_tracks);
-                        //
-                        logger.textContent = 'Processing ' + video_name;
-                        setRequestData('getData');
+                        // add the video ids to the videoIds array
+                        iMax = parseData.length;
+                        for (i = 0; i < iMax; i += 1) {
+                            videoIds.push(parsedData[i].id);
+                        }
+                        // if there are more videos, make another requestID
+                        videoCallNumber++;
+                        if (videoCallNumber < totalVideoCalls) {
+                            setRequestData('getVideos');
+                        } else {
+                            // got all the videos, move on
+                            // split the videoIds array into sets of 100
+                            splitVideoIdsIntoSets();
+                            // make the analytics requests
+                            setRequestData('getAnalytics');
+                        }
                     } else if (requestID === 'getAnalytics') {
                         responseRaw = httpRequest.responseText;
                         responseData.textContent = responseRaw;
-                        // increment offset
-                        offset++;
-                        if (offset < videoCount) {
-                            // move on to next video
-                            setRequestData('get1video');
-                        } else {
-                            // we are done
-                            logger.textContent = 'Finished... ' + offset + ' videos processed'
-                        }
+                        parsedData = JSON.parse(responseRaw);
 
                       }
                     } else {
@@ -388,6 +393,7 @@ var BCLS = (function(window, document, aapi_model) {
         setRequestData('getCount');
     });
     dimensionSelect.addEventListener('change', function() {
+        dimension = getSelectedValue(dimensionSelect);
         addFieldOptions();
     });
     dateSelect.addEventListener('change', function() {
