@@ -285,13 +285,13 @@ var BCLS = (function(window, document, aapi_model) {
     function setRequestData(id) {
         var endPoint = searchString,
             requestData = {},
-            baseURL = cmsBaseURL + accountId + '/videos?';
-            console.log('searchString', searchString);
+            baseURL;
         // disable buttons to prevent a new request before current one finishes
         disableButtons();
         switch (id) {
             case 'getCount':
-                endPoint = '/counts/videos' + searchString;
+                baseURL = cmsBaseURL + accountId + '/counts/videos?';
+                endPoint = searchString;
                 requestData.url = baseURL + endPoint;
                 requestData.requestType = 'GET';
                 apiRequest.textContent = requestData.url;
@@ -299,7 +299,8 @@ var BCLS = (function(window, document, aapi_model) {
                 getMediaData(requestData, id);
                 break;
             case 'getVideos':
-                endPoint = '/videos' + searchString + '&limit=' + pageSize + '&sort=created_at&offset=' + pageSize * videoCallNumber;
+                baseURL = cmsBaseURL + accountId + '/videos?';
+                endPoint = searchString + '&limit=' + pageSize + '&sort=created_at&offset=' + pageSize * videoCallNumber;
                 requestData.url = baseURL + endPoint;
                 requestData.requestType = 'GET';
                 apiRequest.textContent = requestData.url;
@@ -411,7 +412,7 @@ var BCLS = (function(window, document, aapi_model) {
     getData.addEventListener('click', function() {
         var i,
             iMax,
-            selectedValue;
+            selectedValueObj;
         if (!isDefined(account_id.value) || !isDefined(client_id) || !isDefined(client_secret)) {
             window.alert('You must enter an account id, a client id, and a client secret');
             return;
@@ -421,8 +422,8 @@ var BCLS = (function(window, document, aapi_model) {
         clientId = client_id.value;
         clientSecret = client_secret.value;
         // get date range in case it wasn't changed
-        selectedValue = getSelectedValue(dateSelect);
-        searchString = 'q=created_at:%2D' + selectedValue + 'd..';
+        selectedValueObj = getSelectedValue(dateSelect);
+        searchString = 'q=created_at:%2D' + selectedValueObj.value + 'd..';
         // get the array of fields from the checkboxes
         fieldsToReturn = getSelectedCheckboxes(checkboxes, fieldsToReturn);
         console.log('fields', fieldsToReturn);
@@ -453,8 +454,8 @@ var BCLS = (function(window, document, aapi_model) {
     });
 
     dateSelect.addEventListener('change', function() {
-        var selectedValue = getSelectedValue(dateSelect);
-        searchString = 'q=created_at:%2D' + selectedValue + 'd..';
+        var selectedValueObj = getSelectedValue(dateSelect);
+        searchString = 'q=created_at:%2D' + selectedValueObj.value + 'd..';
     })
 
     function init() {
