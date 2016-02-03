@@ -73,8 +73,6 @@
             <p><strong id="logger"></strong></p>
             <p><strong>API request:</strong></p>
                 <pre id="apiRequest"></pre>
-                <p><strong>Input data for write requests:</strong></p>
-                <pre id="apiData"></pre>
                 <p><strong>Request method:</strong></p>
                 <pre id="apiMethod"></pre>
                 <p><strong>Response data</strong></p>
@@ -115,7 +113,6 @@ var BCLS = (function(window, document, aapi_model) {
       allButtons              = document.getElementsByTagName('button'),
       getData                 = document.getElementById('getData'),
       apiRequest              = document.getElementById('apiRequest'),
-      apiData                 = document.getElementById('apiData'),
       apiMethod               = document.getElementById('apiMethod'),
       generatedContent        = document.getElementById('generatedContent'),
       responseData            = document.getElementById('responseData'),
@@ -312,10 +309,8 @@ var BCLS = (function(window, document, aapi_model) {
                 baseURL = aapiBaseURL
                 endPoint = '?accounts=' + accountId + '&dimensions=' + dimension + '&where=video==' + videoIdStr;
                 requestData.url = baseURL + endPoint;
-                requestData.requestType = 'PATCH';
-                requestData.requestBody = {"text_tracks": text_tracks};
+                requestData.requestType = 'GET';
                 apiRequest.textContent = requestData.url;
-                apiData.textContent = JSON.stringify(requestData.requestBody);
                 apiMethod.textContent = requestData.requestType;
                 getMediaData(requestData, id);
                 break;
@@ -354,14 +349,16 @@ var BCLS = (function(window, document, aapi_model) {
                         // calulate total video calls
                         totalVideoCalls = Math.ceil(videoCount / pageSize);
                         console.log('count', videoCount);
+                        console.log('totalVideoCalls', totalVideoCalls);
                         count.textContent = 'Total videos: ' + videoCount;
                         setRequestData('getVideos');
                     } else if (requestID === 'getVideos') {
                         responseRaw = httpRequest.responseText;
                         responseData.textContent = responseRaw;
                         parsedData = JSON.parse(responseRaw);
+                        console.log('parsedData', parsedData);
                         // add the video ids to the videoIds array
-                        iMax = parseData.length;
+                        iMax = parsedData.length;
                         for (i = 0; i < iMax; i += 1) {
                             videoIds.push(parsedData[i].id);
                         }
@@ -412,7 +409,8 @@ var BCLS = (function(window, document, aapi_model) {
     getData.addEventListener('click', function() {
         var i,
             iMax,
-            selectedValueObj;
+            selectedDateObj,
+            dimensionObj;
         if (!isDefined(account_id.value) || !isDefined(client_id) || !isDefined(client_secret)) {
             window.alert('You must enter an account id, a client id, and a client secret');
             return;
@@ -421,8 +419,11 @@ var BCLS = (function(window, document, aapi_model) {
         accountId = account_id.value;
         clientId = client_id.value;
         clientSecret = client_secret.value;
+        // get dimension in case it wasn't changed
+        dimensionObj = getSelectedValue(dimensionSelect);
+        dimension = dimensionObj.value;
         // get date range in case it wasn't changed
-        selectedValueObj = getSelectedValue(dateSelect);
+        selectedDateObj = getSelectedValue(dateSelect);
         searchString = 'q=created_at:%2D' + selectedValueObj.value + 'd..';
         // get the array of fields from the checkboxes
         fieldsToReturn = getSelectedCheckboxes(checkboxes, fieldsToReturn);
