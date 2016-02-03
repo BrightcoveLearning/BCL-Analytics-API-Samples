@@ -94,6 +94,7 @@ var BCLS = (function(window, document, aapi_model) {
       videoCallNumber         = 0,
       totalAnalyticsCalls     = 0,
       analyticsCallNumber     = 0,
+      analyticsObject         = {},
       accountId,
       clientId,
       clientSecret,
@@ -379,7 +380,13 @@ var BCLS = (function(window, document, aapi_model) {
                         responseRaw = httpRequest.responseText;
                         responseData.textContent = responseRaw;
                         parsedData = JSON.parse(responseRaw);
-
+                        // add this data to the summation object
+                        analyticsObject.item_count += parsedData.item_count;
+                        analyticsObject.summary.video_view += parsedData.summary.video_view;
+                        iMax = parsedData.items.length;
+                        for (i = 0; i < iMax; i += 1) {
+                            analyticsObject.items.push(parsedData.items[i]);
+                        }
                       }
                     } else {
                       alert('There was a problem with the request. Request returned ' + httpRequest.status);
@@ -424,7 +431,7 @@ var BCLS = (function(window, document, aapi_model) {
         dimension = dimensionObj.value;
         // get date range in case it wasn't changed
         selectedDateObj = getSelectedValue(dateSelect);
-        searchString = 'q=created_at:%2D' + selectedValueObj.value + 'd..';
+        searchString = 'q=created_at:%2D' + selectedDateObj.value + 'd..';
         // get the array of fields from the checkboxes
         fieldsToReturn = getSelectedCheckboxes(checkboxes, fieldsToReturn);
         console.log('fields', fieldsToReturn);
@@ -461,7 +468,13 @@ var BCLS = (function(window, document, aapi_model) {
 
     function init() {
         console.log('init');
+        // set up dimensions
         addDimensionOptions();
+        // set up analytics object
+        analyticsObject.item_count = 0;
+        analyticsObject.summary = {};
+        analyticsObject.summary.video_view = 0;
+        analyticsObject.items = [];
     }
 
     init();
