@@ -90,6 +90,7 @@ var BCLS = (function(window, document, aapi_model) {
       videoIdSets             = [],
       dimension,
       fieldsToReturn          = [],
+      checkboxes,
       videoCount              = 0,
       totalVideoCalls         = 0,
       videoCallNumber         = 0,
@@ -147,6 +148,23 @@ var BCLS = (function(window, document, aapi_model) {
     }
 
     /**
+     * getSelectedCheckboxes returns an array of the values
+     * of checked checkboxes
+     * @param {htmlElementCollection} checkboxCollection a collection of the checkbox elements, usually gotten by document.getElementsByName()
+     * @param {Array} targetArray the array to store the values in
+     */
+    function getSelectedCheckboxes(checkboxCollection, targetArray) {
+        var i,
+            iMax = checkboxCollection.length;
+        for (i = 0; i < iMax; i += 1) {
+            if (checkboxCollection[i].checked) {
+                targetArray.push(checkboxCollection[i].value);
+            }
+        }
+        return targetArray;
+    }
+
+    /**
      * disables all buttons so user can't submit new request until current one finishes
      */
     function disableButtons() {
@@ -180,7 +198,6 @@ var BCLS = (function(window, document, aapi_model) {
             input,
             br,
             text;
-        console.log('adding dimensions');
         for (i = 0; i < iMax; i += 1) {
             option = document.createElement('option');
             text = document.createTextNode(aapi_model.dimensions[i].name);
@@ -234,6 +251,8 @@ var BCLS = (function(window, document, aapi_model) {
             fieldsCol2.appendChild(text);
             fieldsCol2.appendChild(br);
         }
+        // get a reference to the checkbox collection
+        checkboxes = document.getElementsByName('fieldsChk');
     }
 
     /**
@@ -381,6 +400,8 @@ var BCLS = (function(window, document, aapi_model) {
     }
     // event listeners
     getData.addEventListener('click', function() {
+        var i,
+            iMax;
         if (!isDefined(account_id.value) || !isDefined(client_id) || !isDefined(client_secret)) {
             window.alert('You must enter an account id, a client id, and a client secret');
             return;
@@ -389,6 +410,9 @@ var BCLS = (function(window, document, aapi_model) {
         accountId = account_id.value;
         clientId = client_id.value;
         clientSecret = client_secret.value;
+        // get the array of fields from the checkboxes
+        fieldsToReturn = getSelectedCheckboxes(checkboxes, fieldsToReturn);
+        for (i = 0; )
         // get the video count
         setRequestData('getCount');
     });
