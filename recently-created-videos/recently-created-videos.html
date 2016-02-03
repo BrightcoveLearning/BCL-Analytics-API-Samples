@@ -306,8 +306,9 @@ var BCLS = (function(window, document, aapi_model) {
                 getMediaData(requestData, id);
                 break;
             case 'getAnalytics':
+                var videoIdStr = videoIdSets[analyticsCallNumber].join(',');
                 baseURL = aapiBaseURL
-                endPoint = '''';
+                endPoint = '?accounts=' + accountId + '&dimensions=' + dimension + '&where=video==' + videoIdStr;
                 requestData.url = baseURL + endPoint;
                 requestData.requestType = 'PATCH';
                 requestData.requestBody = {"text_tracks": text_tracks};
@@ -367,9 +368,11 @@ var BCLS = (function(window, document, aapi_model) {
                         if (videoCallNumber < totalVideoCalls) {
                             setRequestData('getVideos');
                         } else {
+                            console.log('videoIds', videoIds);
                             // got all the videos, move on
                             // split the videoIds array into sets of 100
                             splitVideoIdsIntoSets();
+                            console.log('videoIdSets', videoIdSets);
                             // make the analytics requests
                             setRequestData('getAnalytics');
                         }
@@ -419,7 +422,7 @@ var BCLS = (function(window, document, aapi_model) {
         fieldsToReturn = getSelectedCheckboxes(checkboxes, fieldsToReturn);
         console.log('fields', fieldsToReturn);
         // get the video count
-        // setRequestData('getCount');
+        setRequestData('getCount');
     });
 
     dimensionSelect.addEventListener('change', function() {
