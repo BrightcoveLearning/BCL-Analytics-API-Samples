@@ -41,11 +41,11 @@
         <p>This app gets Analytics data for videos that have been added to Video Cloud over some recent period (which you define in the inputs). Note that this app only returns reports on a single dimension, though it could be modified to report on multiple dimensions.</p>
         <fieldset>
             <legend>Inputs</legend>
-            <p><strong>Account id:</strong> <input id="account_id" type="text"></p>
-            <p><strong>Client id:</strong> <input id="client_id" type="text" size="60"></p>
-            <p><strong>Client secret:</strong> <input id="client_secret" type="text" size="60"></p>
+            <p><strong>Account id:</strong> <input id="account_id" type="text" value="1752604059001"></p>
+            <p><strong>Client id:</strong> <input id="client_id" type="text" size="60" value="c5d0a622-5479-46d8-8d8a-5f034b943fab"></p>
+            <p><strong>Client secret:</strong> <input id="client_secret" type="text" size="60" value="w7NQYu0vUloM4GYYy2SXAxrvyFpt8fwI35qAFZcS13-VIgs0itwKNsAwHOS80sOWKJ1BUwHIvSFG2IbgcxEGKg"></p>
             <p>Dimension to report on: <select name="dimensionSelect" id="dimensionSelect"></select></p>
-            <p id="returnFields">Fields to return:<br></p>
+            <p id="returnFields">Fields to return: <button id="fieldsButton">Select All</button> <button id="deselectFieldsButton">Deselect All</button></p>
             <div id="fieldsCol1" class="fields-list"></div>
             <div id="fieldsCol2" class="fields-list"></div>
             <p>Get videos created in the past
@@ -106,6 +106,8 @@ var BCLS = (function(window, document, aapi_model) {
       client_secret           = document.getElementById('client_secret'),
       dimensionSelect         = document.getElementById('dimensionSelect'),
       returnFields            = document.getElementById('returnFields'),
+      fieldsButton            = document.getElementById('fieldsButton'),
+      deselectFieldsButton    = document.getElementById('deselectFieldsButton'),
       fieldsCol1              = document.getElementById('fieldsCol1'),
       fieldsCol2              = document.getElementById('fieldsCol2'),
       dateSelect              = document.getElementById('dateSelect'),
@@ -123,8 +125,8 @@ var BCLS = (function(window, document, aapi_model) {
       iMax;
 
     /**
-    * tests for all the ways a variable might be undefined or not have a value
-    * @param {*} x the variable to test
+    * tests for all the ways a variable (string or number) might be undefined or not have a value
+    * @param {String|Numbar} x the variable to test
     * @return {Boolean} true if variable is defined and has a value
     **/
     function isDefined(x) {
@@ -225,7 +227,9 @@ var BCLS = (function(window, document, aapi_model) {
             text,
             br,
             half;
-        console.log('idx', idx);
+        // clear existing field checkboxes
+        fieldsCol1.innerHTML = '';
+        fieldsCol2.innerHTML = '';
         // add the return field options
         iMax = aapi_model.dimensions[idx].fields.length;
         half = Math.ceil(iMax / 2);
@@ -302,7 +306,8 @@ var BCLS = (function(window, document, aapi_model) {
                 getMediaData(requestData, id);
                 break;
             case 'getAnalytics':
-                endPoint = '/videos/' + video_id;
+                baseURL = aapiBaseURL
+                endPoint = '''';
                 requestData.url = baseURL + endPoint;
                 requestData.requestType = 'PATCH';
                 requestData.requestBody = {"text_tracks": text_tracks};
@@ -412,14 +417,33 @@ var BCLS = (function(window, document, aapi_model) {
         clientSecret = client_secret.value;
         // get the array of fields from the checkboxes
         fieldsToReturn = getSelectedCheckboxes(checkboxes, fieldsToReturn);
-        for (i = 0; )
+        console.log('fields', fieldsToReturn);
         // get the video count
-        setRequestData('getCount');
+        // setRequestData('getCount');
     });
+
     dimensionSelect.addEventListener('change', function() {
-        dimension = getSelectedValue(dimensionSelect);
-        addFieldOptions();
+        var dimensionObj = getSelectedValue(dimensionSelect);
+        dimension = dimensionObj.value;
+        addFieldOptions(dimensionObj.index);
     });
+
+    fieldsButton.addEventListener('click', function() {
+        var i,
+            iMax = checkboxes.length;
+        for (i = 0; i < iMax; i += 1) {
+            checkboxes[i].setAttribute('checked', 'checked');
+        }
+    });
+
+    deselectFieldsButton.addEventListener('click', function() {
+        var i,
+            iMax = checkboxes.length;
+        for (i = 0; i < iMax; i += 1) {
+            checkboxes[i].removeAttribute('checked');
+        }
+    });
+
     dateSelect.addEventListener('change', function() {
         var selectedValue = getSelectedValue(dateSelect);
         searchString = 'q=created_at:%2D' + selectedValue + 'd..';
