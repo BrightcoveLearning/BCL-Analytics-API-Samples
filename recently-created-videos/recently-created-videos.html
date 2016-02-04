@@ -366,6 +366,7 @@ var BCLS = (function(window, document, aapi_model) {
                         // if there are more videos, make another requestID
                         videoCallNumber++;
                         if (videoCallNumber < totalVideoCalls) {
+                            // make the next call
                             setRequestData('getVideos');
                         } else {
                             console.log('videoIds', videoIds);
@@ -386,6 +387,15 @@ var BCLS = (function(window, document, aapi_model) {
                         iMax = parsedData.items.length;
                         for (i = 0; i < iMax; i += 1) {
                             analyticsObject.items.push(parsedData.items[i]);
+                        }
+                        // check to see if there are more calls to make
+                        analyticsCallNumber++;
+                        if (analyticsCallNumber < totalAnalyticsCalls) {
+                            // make the next call
+                            setRequestData('getAnalytics');
+                        } else {
+                            // we are done - display the final results
+                            responseData.textContent = JSON.stringify(analyticsObject, null, '  ');
                         }
                       }
                     } else {
