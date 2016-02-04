@@ -44,7 +44,7 @@
             <p><strong>Account id:</strong> <input id="account_id" type="text" value="1752604059001"></p>
             <p><strong>Client id:</strong> <input id="client_id" type="text" size="60" value="c5d0a622-5479-46d8-8d8a-5f034b943fab"></p>
             <p><strong>Client secret:</strong> <input id="client_secret" type="text" size="60" value="w7NQYu0vUloM4GYYy2SXAxrvyFpt8fwI35qAFZcS13-VIgs0itwKNsAwHOS80sOWKJ1BUwHIvSFG2IbgcxEGKg"></p>
-            <p>Dimension to report on: <select name="dimensionSelect" id="dimensionSelect"></select></p>
+            <p>Dimension to report on: <select name="dimensionSelect" id="dimensionSelect" multiple></select></p>
             <p id="returnFields">Fields to return: <button id="fieldsButton">Select All</button> <button id="deselectFieldsButton">Deselect All</button></p>
             <div id="fieldsCol1" class="fields-list"></div>
             <div id="fieldsCol2" class="fields-list"></div>
@@ -146,6 +146,42 @@ var BCLS = (function(window, document, aapi_model) {
             index: idx
         }
     }
+
+    /**
+     * gets a collection of selected options for multi-select control
+     * @param  {Element}   sel      the selector element
+     * @param  {Function} [callback] callback to handle individual selected options
+     * @return {Array}  array of selected options
+     */
+    function getSelectedOptions(sel, callback) {
+        var opts = [], opt, i, len;
+
+        // loop through options in select list
+        for (i = 0, len = sel.options.length; i < len; i++) {
+            opt = sel.options[i];
+
+            // check if selected
+            if ( opt.selected ) {
+                // add to array of option elements to return from this function
+                opts.push(opt);
+
+                // invoke optional callback function if provided
+                // and pass the selector and the selected option
+                if (callback) {
+                    fn(sel, opt);
+                }
+            }
+        }
+
+        // return array containing references to selected option elements
+        return opts;
+    }
+
+        // return array containing references to selected option elements
+        return opts;
+    }
+
+
 
     /**
      * getSelectedCheckboxes returns an array of the values
@@ -287,24 +323,6 @@ var BCLS = (function(window, document, aapi_model) {
         // disable buttons to prevent a new request before current one finishes
         disableButtons();
         switch (id) {
-            case 'getCount':
-                baseURL = cmsBaseURL + accountId + '/counts/videos?';
-                endPoint = searchString;
-                requestData.url = baseURL + endPoint;
-                requestData.requestType = 'GET';
-                apiRequest.textContent = requestData.url;
-                apiMethod.textContent = requestData.requestType;
-                getMediaData(requestData, id);
-                break;
-            case 'getVideos':
-                baseURL = cmsBaseURL + accountId + '/videos?';
-                endPoint = searchString + '&limit=' + pageSize + '&sort=created_at&offset=' + pageSize * videoCallNumber;
-                requestData.url = baseURL + endPoint;
-                requestData.requestType = 'GET';
-                apiRequest.textContent = requestData.url;
-                apiMethod.textContent = requestData.requestType;
-                getMediaData(requestData, id);
-                break;
             case 'getAnalytics':
                 var videoIdStr = videoIdSets[analyticsCallNumber].join(',');
                 baseURL = aapiBaseURL
