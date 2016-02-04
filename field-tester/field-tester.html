@@ -44,27 +44,13 @@
             <p><strong>Account id:</strong> <input id="account_id" type="text" value="1752604059001"></p>
             <p><strong>Client id:</strong> <input id="client_id" type="text" size="60" value="c5d0a622-5479-46d8-8d8a-5f034b943fab"></p>
             <p><strong>Client secret:</strong> <input id="client_secret" type="text" size="60" value="w7NQYu0vUloM4GYYy2SXAxrvyFpt8fwI35qAFZcS13-VIgs0itwKNsAwHOS80sOWKJ1BUwHIvSFG2IbgcxEGKg"></p>
-            <p>Dimension to report on: <select name="dimensionSelect" id="dimensionSelect" multiple></select></p>
+            <p>Dimension to report on:</p>
+            <div id="dimensionsCol1" class="fields-list"></div>
+            <div id="dimensionsCol2" class="fields-list"></div>
+
             <p id="returnFields">Fields to return: <button id="fieldsButton">Select All</button> <button id="deselectFieldsButton">Deselect All</button></p>
             <div id="fieldsCol1" class="fields-list"></div>
             <div id="fieldsCol2" class="fields-list"></div>
-            <p>Get videos created in the past
-                <select name="dateSelect" id="dateSelect">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="30" selected="selected">30</option>
-                    <option value="60">60</option>
-                    <option value="90">90</option>
-                    <option value="180">180</option>
-                    <option value="365">365</option>
-                </select>
-                days
-        </p>
         <p><button id="getData">Get Analytics Data</button></p>
         </fieldset>
         <fieldset>
@@ -72,29 +58,25 @@
             <p><strong id="count"></strong></p>
             <p><strong id="logger"></strong></p>
             <p><strong>API request:</strong></p>
-                <pre id="apiRequest"></pre>
-                <p><strong>Request method:</strong></p>
-                <pre id="apiMethod"></pre>
-                <p><strong>Response data</strong></p>
+            <pre id="apiRequest"></pre>
+            <p><strong>Request method:</strong></p>
+            <pre id="apiMethod"></pre>
+            <p><strong>Fields Array for the Selected Dimension(s):</strong></p>
+            <pre id="fieldsArrayDisplay"></pre>
+            <pre id="apiMethod"></pre>
+            <p><strong>Response data</strong></p>
             <pre id="responseData"></pre>
         </fieldset>
-<script src="//docs.brightcove.com/en/video-cloud/analytics-api/assets/aapi-model.js"></script>
+<script src="//docs.brightcove.com/en/video-cloud/analytics-api/assets/aapi-model-v1.js"></script>
 <script>
 var BCLS = (function(window, document, aapi_model) {
-  var cmsBaseURL              = 'https://cms.api.brightcove.com/v1/accounts/',
-      aapiBaseURL             = 'https://analytics.api.brightcove.com/v1/data',
+  var baseURL                 = 'https://analytics.api.brightcove.com/v1/data',
       proxyURL                = 'https://solutions.brightcove.com/bcls/bcls-proxy/bcls-proxy.php',
-      videoIds                = [],
-      videoIdSets             = [],
       dimension,
+      selectedDimensions      = [],
       fieldsToReturn          = [],
-      checkboxes,
-      videoCount              = 0,
-      totalVideoCalls         = 0,
-      videoCallNumber         = 0,
-      totalAnalyticsCalls     = 0,
-      analyticsCallNumber     = 0,
-      analyticsObject         = {},
+      fieldsCheckboxes,
+      dimensionCheckboxes,
       accountId,
       clientId,
       clientSecret,
@@ -107,6 +89,8 @@ var BCLS = (function(window, document, aapi_model) {
       returnFields            = document.getElementById('returnFields'),
       fieldsButton            = document.getElementById('fieldsButton'),
       deselectFieldsButton    = document.getElementById('deselectFieldsButton'),
+      dimensionsCol1          = document.getElementById('dimensionsCol1'),
+      dimensionsCol2          = document.getElementById('dimensionsCol2'),
       fieldsCol1              = document.getElementById('fieldsCol1'),
       fieldsCol2              = document.getElementById('fieldsCol2'),
       dateSelect              = document.getElementById('dateSelect'),
@@ -115,6 +99,7 @@ var BCLS = (function(window, document, aapi_model) {
       getData                 = document.getElementById('getData'),
       apiRequest              = document.getElementById('apiRequest'),
       apiMethod               = document.getElementById('apiMethod'),
+      fieldsArrayDisplay      = document.getElementById('fieldsArrayDisplay'),
       generatedContent        = document.getElementById('generatedContent'),
       responseData            = document.getElementById('responseData'),
       logger                  = document.getElementById('logger'),
@@ -132,11 +117,12 @@ var BCLS = (function(window, document, aapi_model) {
            return false;
         }
         return true;
-    };
+    }
 
     /**
      * get selected value for single select element
      * @param {htmlElement} e the select element
+     * @return {Object} object containing the `value` and selected `index`
      */
     function getSelectedValue(e) {
         var val = e.options[e.selectedIndex].value,
@@ -177,11 +163,25 @@ var BCLS = (function(window, document, aapi_model) {
         return opts;
     }
 
-        // return array containing references to selected option elements
-        return opts;
+    /**
+     * dedupe a simple array of strings or numbers
+     * @param {array} arr the array to be deduped
+     * @return {array} the deduped array
+     */
+    function dedupe(arr) {
+        var i,
+            len = arr.length,
+            out = [],
+            obj = {};
+
+        for (i = 0;i < len; i++) {
+            obj[arr[i]] = 0;
+        }
+        for (i in obj) {
+            out.push(i);
+        }
+        return out;
     }
-
-
 
     /**
      * getSelectedCheckboxes returns an array of the values
@@ -227,36 +227,57 @@ var BCLS = (function(window, document, aapi_model) {
      */
     function addDimensionOptions() {
         var i,
-            iMax = aapi_model.dimensions.length,
-            j,
-            jMax,
-            option,
+            iMax,
             input,
+            text,
             br,
-            text;
-        for (i = 0; i < iMax; i += 1) {
-            option = document.createElement('option');
-            text = document.createTextNode(aapi_model.dimensions[i].name);
-            option.appendChild(text);
-            if (aapi_model.dimensions[i].name === 'video') {
-                option.setAttribute('selected', 'selected');
-                addFieldOptions(i);
-            }
-            // add option to selector
-            dimensionSelect.appendChild(option);
+            half;
+        // clear existing dimension checkboxes
+        dimensionsCol1.innerHTML = '';
+        dimensionsCol2.innerHTML = '';
+        // add the return field options
+        iMax = aapi_model.dimensions.length;
+        half = Math.ceil(iMax / 2);
+        for (i = 0; i < half; i += 1) {
+            input = document.createElement('input');
+            input.setAttribute('name', 'dimensionsChk');
+            input.setAttribute('data-index', 'i');
+            input.setAttribute('type', 'checkbox');
+            input.setAttribute('value', aapi_model.dimensions[i]);
+            text = document.createTextNode(' ' + aapi_model.dimensions[i]);
+            br = document.createElement('br');
+            dimensionsCol1.appendChild(input);
+            dimensionsCol1.appendChild(text);
+            dimensionsCol1.appendChild(br);
         }
-        return;
+        for (i = half; i < iMax; i += 1) {
+            input = document.createElement('input');
+            input.setAttribute('name', 'dimensionsChk');
+            input.setAttribute('data-index', 'i');
+            input.setAttribute('type', 'checkbox');
+            input.setAttribute('value', aapi_model.dimensions[i]);
+            text = document.createTextNode(' ' + aapi_model.dimensions[i]);
+            br = document.createElement('br');
+            dimensionsCol2.appendChild(input);
+            dimensionsCol2.appendChild(text);
+            dimensionsCol2.appendChild(br);
+        }
+        // get a reference to the checkbox collection
+        dimensionCheckboxes = document.getElementsByName('dimensionsChk');
     }
 
     /**
      * addFieldOptions generates checkboxes for each field
-     * available for the selected dimension
-     *
-     * @ {Number} idx the index of the dimension object in the aapi_model
+     * available for the selected dimensions
      */
-    function addFieldOptions(idx) {
-        var i,
+    function addFieldOptions() {
+        var fieldsArray = [],
+            dimensionName,
+            thisDimensionFields,
+            i,
             iMax,
+            j,
+            jMax,
             input,
             text,
             br,
@@ -264,15 +285,31 @@ var BCLS = (function(window, document, aapi_model) {
         // clear existing field checkboxes
         fieldsCol1.innerHTML = '';
         fieldsCol2.innerHTML = '';
+        // single or multiple dimensions?
+        iMax = selectedDimensions.length;
+        if (iMax === 1) {
+            dimensionName = selectedDimensions[0];
+            fieldsArray = aapi_model.dimensions[dimensionName].fields;
+        } else {
+            for (i = 0; i < iMax; i += 1) {
+                thisDimensionFields = aapi_model.dimensions[selectedDimensions[i]].fields;
+                jMax = thisDimensionFields.length;
+                for (j = 0; j < jMax; j += 1) {
+                    fieldsArray.push(thisDimensionFields[j]);
+                }
+            }
+            // dedupe the array
+            fieldsArray = dedupe(fieldsArray);
+        }
         // add the return field options
-        iMax = aapi_model.dimensions[idx].fields.length;
+        iMax = fieldsArray.length;
         half = Math.ceil(iMax / 2);
         for (i = 0; i < half; i += 1) {
             input = document.createElement('input');
             input.setAttribute('name', 'fieldsChk');
             input.setAttribute('type', 'checkbox');
-            input.setAttribute('value', aapi_model.dimensions[idx].fields[i]);
-            text = document.createTextNode(' ' + aapi_model.dimensions[idx].fields[i]);
+            input.setAttribute('value', fieldsArray[i]);
+            text = document.createTextNode(' ' + fieldsArray[i]);
             br = document.createElement('br');
             fieldsCol1.appendChild(input);
             fieldsCol1.appendChild(text);
@@ -282,34 +319,15 @@ var BCLS = (function(window, document, aapi_model) {
             input = document.createElement('input');
             input.setAttribute('name', 'fieldsChk');
             input.setAttribute('type', 'checkbox');
-            input.setAttribute('value', aapi_model.dimensions[idx].fields[i]);
-            text = document.createTextNode(' ' + aapi_model.dimensions[idx].fields[i]);
+            input.setAttribute('value', fieldsArray[i]);
+            text = document.createTextNode(' ' + fieldsArray[i]);
             br = document.createElement('br');
             fieldsCol2.appendChild(input);
             fieldsCol2.appendChild(text);
             fieldsCol2.appendChild(br);
         }
         // get a reference to the checkbox collection
-        checkboxes = document.getElementsByName('fieldsChk');
-    }
-
-    /**
-     * splitVideoIdsIntoSets - splits the videoIds array into
-     * sets of 100 or less (because you can only get analytics
-     * on about 100 videos at a time without exceeding the maximum
-     * url length for the Analytics API request)
-     */
-    function splitVideoIdsIntoSets() {
-        var tmpArray = [];
-        // grab the first 100 as a new array, push into sets array
-        tmpArray = videoIds.splice(0, 100);
-        videoIdSets.push(tmpArray);
-        // function recalls itself until videoIds array is empty
-        if (videoIds.length > 0) {
-            splitVideoIdsIntoSets();
-        } else {
-            return;
-        }
+        fieldsCheckboxes = document.getElementsByName('fieldsChk');
     }
 
     /**
@@ -317,8 +335,7 @@ var BCLS = (function(window, document, aapi_model) {
      * @param {String="getCount","getVideos","getData"} id the id for the call type
      */
     function setRequestData(id) {
-        var endPoint = searchString,
-            requestData = {},
+        var requestData = {},
             baseURL;
         // disable buttons to prevent a new request before current one finishes
         disableButtons();
@@ -326,7 +343,7 @@ var BCLS = (function(window, document, aapi_model) {
             case 'getAnalytics':
                 var videoIdStr = videoIdSets[analyticsCallNumber].join(',');
                 baseURL = aapiBaseURL
-                endPoint = '?accounts=' + accountId + '&dimensions=' + dimension + '&where=video==' + videoIdStr + '&fields=' + fieldsToReturn.join(',');
+                endPoint = '?accounts=' + accountId + '&dimensions=' + selectedDimensions.join(',') + '&fields=' + fieldsToReturn.join(',');
                 requestData.url = baseURL + endPoint;
                 requestData.requestType = 'GET';
                 apiRequest.textContent = requestData.url;
@@ -355,67 +372,10 @@ var BCLS = (function(window, document, aapi_model) {
                   if (httpRequest.readyState === 4) {
                     if (httpRequest.status === 200) {
                       // check for completion
-                      if (requestID === 'getCount') {
-                        if (httpRequest.responseText === '[]') {
-                            // no video returned
-                            alert('no video returned');
-                        }
                         responseRaw = httpRequest.responseText;
-                        responseData.textContent = responseRaw;
+                        // responseData.textContent = responseRaw;
                         parsedData = JSON.parse(responseRaw);
-                        // set total videos
-                        videoCount = parsedData.count;
-                        // calulate total video calls
-                        totalVideoCalls = Math.ceil(videoCount / pageSize);
-                        console.log('count', videoCount);
-                        console.log('totalVideoCalls', totalVideoCalls);
-                        count.textContent = 'Total videos: ' + videoCount;
-                        setRequestData('getVideos');
-                    } else if (requestID === 'getVideos') {
-                        responseRaw = httpRequest.responseText;
-                        responseData.textContent = responseRaw;
-                        parsedData = JSON.parse(responseRaw);
-                        console.log('parsedData', parsedData);
-                        // add the video ids to the videoIds array
-                        iMax = parsedData.length;
-                        for (i = 0; i < iMax; i += 1) {
-                            videoIds.push(parsedData[i].id);
-                        }
-                        // if there are more videos, make another requestID
-                        videoCallNumber++;
-                        if (videoCallNumber < totalVideoCalls) {
-                            // make the next call
-                            setRequestData('getVideos');
-                        } else {
-                            console.log('videoIds', videoIds);
-                            // got all the videos, move on
-                            // split the videoIds array into sets of 100
-                            splitVideoIdsIntoSets();
-                            console.log('videoIdSets', videoIdSets);
-                            // make the analytics requests
-                            setRequestData('getAnalytics');
-                        }
-                    } else if (requestID === 'getAnalytics') {
-                        responseRaw = httpRequest.responseText;
-                        responseData.textContent = responseRaw;
-                        parsedData = JSON.parse(responseRaw);
-                        // add this data to the summation object
-                        analyticsObject.item_count += parsedData.item_count;
-                        analyticsObject.summary.video_view += parsedData.summary.video_view;
-                        iMax = parsedData.items.length;
-                        for (i = 0; i < iMax; i += 1) {
-                            analyticsObject.items.push(parsedData.items[i]);
-                        }
-                        // check to see if there are more calls to make
-                        analyticsCallNumber++;
-                        if (analyticsCallNumber < totalAnalyticsCalls) {
-                            // make the next call
-                            setRequestData('getAnalytics');
-                        } else {
-                            // we are done - display the final results
-                            responseData.textContent = JSON.stringify(analyticsObject, null, '  ');
-                        }
-                      }
+                        responseData.textContent = JSON.stringify(parsedData, null, '  ');
                     } else {
                       alert('There was a problem with the request. Request returned ' + httpRequest.status);
                     }
@@ -440,69 +400,61 @@ var BCLS = (function(window, document, aapi_model) {
         // open and send request
         httpRequest.send(requestParams);
     }
-    // event listeners
-    getData.addEventListener('click', function() {
-        var i,
-            iMax,
-            selectedDateObj,
-            dimensionObj;
-        if (!isDefined(account_id.value) || !isDefined(client_id) || !isDefined(client_secret)) {
-            window.alert('You must enter an account id, a client id, and a client secret');
-            return;
-        }
-        // get account values
-        accountId = account_id.value;
-        clientId = client_id.value;
-        clientSecret = client_secret.value;
-        // get dimension in case it wasn't changed
-        dimensionObj = getSelectedValue(dimensionSelect);
-        dimension = dimensionObj.value;
-        // get date range in case it wasn't changed
-        selectedDateObj = getSelectedValue(dateSelect);
-        searchString = 'q=created_at:%2D' + selectedDateObj.value + 'd..';
-        // get the array of fields from the checkboxes
-        fieldsToReturn = getSelectedCheckboxes(checkboxes, fieldsToReturn);
-        console.log('fields', fieldsToReturn);
-        // get the video count
-        setRequestData('getCount');
-    });
-
-    dimensionSelect.addEventListener('change', function() {
-        var dimensionObj = getSelectedValue(dimensionSelect);
-        dimension = dimensionObj.value;
-        addFieldOptions(dimensionObj.index);
-    });
-
-    fieldsButton.addEventListener('click', function() {
-        var i,
-            iMax = checkboxes.length;
-        for (i = 0; i < iMax; i += 1) {
-            checkboxes[i].setAttribute('checked', 'checked');
-        }
-    });
-
-    deselectFieldsButton.addEventListener('click', function() {
-        var i,
-            iMax = checkboxes.length;
-        for (i = 0; i < iMax; i += 1) {
-            checkboxes[i].removeAttribute('checked');
-        }
-    });
-
-    dateSelect.addEventListener('change', function() {
-        var selectedValueObj = getSelectedValue(dateSelect);
-        searchString = 'q=created_at:%2D' + selectedValueObj.value + 'd..';
-    })
 
     function init() {
         console.log('init');
         // set up dimensions
         addDimensionOptions();
-        // set up analytics object
-        analyticsObject.item_count = 0;
-        analyticsObject.summary = {};
-        analyticsObject.summary.video_view = 0;
-        analyticsObject.items = [];
+        // event listeners
+        getData.addEventListener('click', function() {
+            var i,
+                iMax,
+                selectedDateObj,
+                dimensionObj;
+            if (!isDefined(account_id.value) || !isDefined(client_id) || !isDefined(client_secret)) {
+                window.alert('You must enter an account id, a client id, and a client secret');
+                return;
+            }
+            // get account values
+            accountId = account_id.value;
+            clientId = client_id.value;
+            clientSecret = client_secret.value;
+            // get dimension in case it wasn't changed
+            selectedDimensions = getSelectedCheckboxes(dimensionCheckboxes, selectedDimensions);
+            searchString = 'q=created_at:%2D' + selectedDateObj.value + 'd..';
+            // get the array of fields from the fieldsCheckboxes
+            fieldsToReturn = getSelectedCheckboxes(fieldsCheckboxes, fieldsToReturn);
+            console.log('fields', fieldsToReturn);
+            fieldsArrayDisplay.textContent = '[' + fieldsToReturn.join(',') + ']';
+            // get the video count
+            setRequestData('getCount');
+        });
+
+        // dimensions
+        iMax = dimensionCheckboxes.length;
+        for (i = 0; i < iMax; i += 1) {
+            dimensionCheckboxes[i].addEventListener('change', function() {
+                selectedDimensions = getSelectedCheckboxes(dimensionCheckboxes, selectedDimensions);
+                addFieldOptions();
+            });
+        }
+
+        fieldsButton.addEventListener('click', function() {
+            var i,
+                iMax = checkboxes.length;
+            for (i = 0; i < iMax; i += 1) {
+                fieldsCheckboxes[i].setAttribute('checked', 'checked');
+            }
+        });
+
+        deselectFieldsButton.addEventListener('click', function() {
+            var i,
+                iMax = fieldsCheckboxes.length;
+            for (i = 0; i < iMax; i += 1) {
+                fieldsCheckboxes[i].removeAttribute('checked');
+            }
+        });
+
     }
 
     init();
