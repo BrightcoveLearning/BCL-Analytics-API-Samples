@@ -328,6 +328,14 @@ var BCLS = (function(window, document, aapi_model) {
             fieldsCol1.innerHTML = '<strong>The following dimensions cannot be combined <br> with any other dimension: <code>date</code>, <code>date_hour</code></strong>';
             fieldsCol2.innerHTML = '';
             return;
+        } else if (isItemInArray(selectedDimensions, 'video') && (isItemInArray(selectedDimensions, 'search_terms')) {
+            fieldsCol1.innerHTML = '<strong>These dimensions cannot be combined</strong>';
+            fieldsCol2.innerHTML = '';
+            return;
+        } else if (isItemInArray(selectedDimensions, 'video') && (isItemInArray(selectedDimensions, 'destination_path')) {
+            fieldsCol1.innerHTML = '<strong>These dimensions cannot be combined</strong>';
+            fieldsCol2.innerHTML = '';
+            return;
         }
         // clear existing field checkboxes
         fieldsCol1.innerHTML = '';
