@@ -161,6 +161,24 @@ var BCLS = (function(window, document, aapi_model) {
     }
 
     /**
+     * determines whether specified item is in an array
+     *
+     * @param {array} array to check
+     * @param {string} item to check for
+     * @return {boolean} true if item is in the array, else false
+     */
+    function isItemInArray(arr, item) {
+        var i,
+            iMax = arr.length;
+        for (i = 0; i < iMax; i++) {
+            if (arr[i] === item) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    /**
      * find index of an object in array of objects
      * based on some property value
      *
@@ -305,6 +323,12 @@ var BCLS = (function(window, document, aapi_model) {
             text,
             br,
             half;
+        // check for invalid combinations
+        if (isItemInArray(selectedDimensions, 'date') || isItemInArray(selectedDimensions, 'date_hour')) {
+            fieldsCol1.innerHTML = '<strong>The following dimensions cannot be combined <br> with any other dimension: <code>date</code>, <code>date_hour</code></strong>';
+            fieldsCol2.innerHTML = '';
+            return;
+        }
         // clear existing field checkboxes
         fieldsCol1.innerHTML = '';
         fieldsCol2.innerHTML = '';
