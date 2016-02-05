@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <title>Analytics for Recently Added Videos</title>
+        <title>Analytics API Field Tester</title>
         <style>
         body {
         margin: 2em;
@@ -37,8 +37,8 @@
         </style>
     </head>
     <body>
-        <h1>Analytics for Recently Added Videos</h1>
-        <p>This app gets Analytics data for videos that have been added to Video Cloud over some recent period (which you define in the inputs). Note that this app only returns reports on a single dimension, though it could be modified to report on multiple dimensions.</p>
+        <h1>Analytics API Field Tester</h1>
+        <p>Testbed to determine what combinations of fields are valid for combinations of dimensions.</p>
         <fieldset>
             <legend>Inputs</legend>
             <p><strong>Account id:</strong> <input id="account_id" type="text" value="1752604059001"></p>
@@ -63,15 +63,13 @@
             <pre id="apiMethod"></pre>
             <p><strong>Fields Array for the Selected Dimension(s):</strong></p>
             <pre id="fieldsArrayDisplay"></pre>
-            <pre id="apiMethod"></pre>
             <p><strong>Response data</strong></p>
             <pre id="responseData"></pre>
         </fieldset>
 <script src="//docs.brightcove.com/en/video-cloud/analytics-api/assets/aapi-model-v1.js"></script>
 <script>
 var BCLS = (function(window, document, aapi_model) {
-  var baseURL                 = 'https://analytics.api.brightcove.com/v1/data',
-      proxyURL                = 'https://solutions.brightcove.com/bcls/bcls-proxy/bcls-proxy.php',
+  var proxyURL                = 'https://solutions.brightcove.com/bcls/bcls-proxy/bcls-proxy.php',
       dimension,
       selectedDimensions      = [],
       fieldsToReturn          = [],
@@ -158,9 +156,30 @@ var BCLS = (function(window, document, aapi_model) {
                 }
             }
         }
-
         // return array containing references to selected option elements
         return opts;
+    }
+
+    /**
+     * find index of an object in array of objects
+     * based on some property value
+     *
+     * @param {array} targetArray array to search
+     * @param {string} objProperty object property to search
+     * @param {string} value of the property to search for
+     * @return {integer} index of first instance if found, otherwise returns -1
+    */
+    function findObjectInArray(targetArray, objProperty, value) {
+        var i, totalItems = targetArray.length, objFound = false;
+        for (i = 0; i < totalItems; i++) {
+            if (targetArray[i][objProperty] === value) {
+                objFound = true;
+                return i;
+            }
+        }
+        if (objFound === false) {
+            return -1;
+        }
     }
 
     /**
@@ -243,8 +262,11 @@ var BCLS = (function(window, document, aapi_model) {
             input.setAttribute('name', 'dimensionsChk');
             input.setAttribute('data-index', 'i');
             input.setAttribute('type', 'checkbox');
-            input.setAttribute('value', aapi_model.dimensions[i]);
-            text = document.createTextNode(' ' + aapi_model.dimensions[i]);
+            input.setAttribute('value', aapi_model.dimensions[i].name);
+            if (aapi_model.dimensions[i].name === 'video') {
+                input.setAttribute('checked', 'true');
+            }
+            text = document.createTextNode(' ' + aapi_model.dimensions[i].name);
             br = document.createElement('br');
             dimensionsCol1.appendChild(input);
             dimensionsCol1.appendChild(text);
@@ -255,8 +277,8 @@ var BCLS = (function(window, document, aapi_model) {
             input.setAttribute('name', 'dimensionsChk');
             input.setAttribute('data-index', 'i');
             input.setAttribute('type', 'checkbox');
-            input.setAttribute('value', aapi_model.dimensions[i]);
-            text = document.createTextNode(' ' + aapi_model.dimensions[i]);
+            input.setAttribute('value', aapi_model.dimensions[i].name);
+            text = document.createTextNode(' ' + aapi_model.dimensions[i].name);
             br = document.createElement('br');
             dimensionsCol2.appendChild(input);
             dimensionsCol2.appendChild(text);
@@ -273,6 +295,7 @@ var BCLS = (function(window, document, aapi_model) {
     function addFieldOptions() {
         var fieldsArray = [],
             dimensionName,
+            dimensionIndex,
             thisDimensionFields,
             i,
             iMax,
@@ -289,10 +312,13 @@ var BCLS = (function(window, document, aapi_model) {
         iMax = selectedDimensions.length;
         if (iMax === 1) {
             dimensionName = selectedDimensions[0];
-            fieldsArray = aapi_model.dimensions[dimensionName].fields;
+            dimensionIndex = findObjectInArray(aapi_model.dimensions, 'name', dimensionName);
+            fieldsArray = aapi_model.dimensions[dimensionIndex].fields;
         } else {
             for (i = 0; i < iMax; i += 1) {
-                thisDimensionFields = aapi_model.dimensions[selectedDimensions[i]].fields;
+                dimensionName = selectedDimensions[i];
+                dimensionIndex = findObjectInArray(aapi_model.dimensions, 'name', dimensionName);
+                thisDimensionFields = aapi_model.dimensions[dimensionIndex].fields;
                 jMax = thisDimensionFields.length;
                 for (j = 0; j < jMax; j += 1) {
                     fieldsArray.push(thisDimensionFields[j]);
@@ -336,22 +362,16 @@ var BCLS = (function(window, document, aapi_model) {
      */
     function setRequestData(id) {
         var requestData = {},
-            baseURL;
+        baseURL = 'https://analytics.api.brightcove.com/v1/data';
         // disable buttons to prevent a new request before current one finishes
         disableButtons();
-        switch (id) {
-            case 'getAnalytics':
-                var videoIdStr = videoIdSets[analyticsCallNumber].join(',');
-                baseURL = aapiBaseURL
-                endPoint = '?accounts=' + accountId + '&dimensions=' + selectedDimensions.join(',') + '&fields=' + fieldsToReturn.join(',');
-                requestData.url = baseURL + endPoint;
-                requestData.requestType = 'GET';
-                apiRequest.textContent = requestData.url;
-                apiMethod.textContent = requestData.requestType;
-                getMediaData(requestData, id);
-                break;
-        }
-    }
+        endPoint = '?accounts=' + accountId + '&dimensions=' + selectedDimensions.join(',') + '&fields=' + fieldsToReturn.join(',');
+        requestData.url = baseURL + endPoint;
+        requestData.requestType = 'GET';
+        apiRequest.textContent = requestData.url;
+        apiMethod.textContent = requestData.requestType;
+        getMediaData(requestData, id);
+}
 
     /**
      * send API request to the proxy
@@ -373,9 +393,11 @@ var BCLS = (function(window, document, aapi_model) {
                     if (httpRequest.status === 200) {
                       // check for completion
                         responseRaw = httpRequest.responseText;
-                        // responseData.textContent = responseRaw;
+                        responseData.textContent = responseRaw;
                         parsedData = JSON.parse(responseRaw);
                         responseData.textContent = JSON.stringify(parsedData, null, '  ');
+                        // re-enable buttons
+                        enableButtons();
                     } else {
                       alert('There was a problem with the request. Request returned ' + httpRequest.status);
                     }
@@ -405,12 +427,19 @@ var BCLS = (function(window, document, aapi_model) {
         console.log('init');
         // set up dimensions
         addDimensionOptions();
+        // set up fields
+        selectedDimensions = ['video'];
+        addFieldOptions();
         // event listeners
         getData.addEventListener('click', function() {
             var i,
                 iMax,
                 selectedDateObj,
-                dimensionObj;
+                dimensionObj,
+                displayFields = '';
+            // make sure arrays are emptied out
+            selectedDimensions = [];
+            fieldsToReturn = [];
             if (!isDefined(account_id.value) || !isDefined(client_id) || !isDefined(client_secret)) {
                 window.alert('You must enter an account id, a client id, and a client secret');
                 return;
@@ -421,27 +450,37 @@ var BCLS = (function(window, document, aapi_model) {
             clientSecret = client_secret.value;
             // get dimension in case it wasn't changed
             selectedDimensions = getSelectedCheckboxes(dimensionCheckboxes, selectedDimensions);
-            searchString = 'q=created_at:%2D' + selectedDateObj.value + 'd..';
             // get the array of fields from the fieldsCheckboxes
             fieldsToReturn = getSelectedCheckboxes(fieldsCheckboxes, fieldsToReturn);
             console.log('fields', fieldsToReturn);
-            fieldsArrayDisplay.textContent = '[' + fieldsToReturn.join(',') + ']';
+            iMax = fieldsToReturn.length;
+            for (i = 0; i < iMax; i += 1) {
+                if (i === iMax - 1) {
+                    displayFields += '"' + fieldsToReturn[i] + '"';
+                } else {
+                    displayFields += '"' + fieldsToReturn[i] + '", ';
+                }
+            }
+            fieldsArrayDisplay.textContent = displayFields;
             // get the video count
-            setRequestData('getCount');
+            setRequestData('getAnalytics');
         });
 
         // dimensions
         iMax = dimensionCheckboxes.length;
         for (i = 0; i < iMax; i += 1) {
-            dimensionCheckboxes[i].addEventListener('change', function() {
+            dimensionCheckboxes[i].addEventListener('click', function() {
+                // empty selected dimensions arrays
+                selectedDimensions = [];
                 selectedDimensions = getSelectedCheckboxes(dimensionCheckboxes, selectedDimensions);
+                console.log('selectedDimensions', selectedDimensions);
                 addFieldOptions();
             });
         }
 
         fieldsButton.addEventListener('click', function() {
             var i,
-                iMax = checkboxes.length;
+                iMax = fieldsCheckboxes.length;
             for (i = 0; i < iMax; i += 1) {
                 fieldsCheckboxes[i].setAttribute('checked', 'checked');
             }
