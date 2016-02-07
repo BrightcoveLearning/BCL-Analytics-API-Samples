@@ -336,6 +336,22 @@ var BCLS = (function(window, document, aapi_model) {
             fieldsCol1.innerHTML = '<strong>These dimensions cannot be combined</strong>';
             fieldsCol2.innerHTML = '';
             return;
+        } else if (isItemInArray(selectedDimensions, 'player') && isItemInArray(selectedDimensions, 'destination_path')) {
+            fieldsCol1.innerHTML = '<strong>These dimensions cannot be combined</strong>';
+            fieldsCol2.innerHTML = '';
+            return;
+        } else if (isItemInArray(selectedDimensions, 'player') && isItemInArray(selectedDimensions, 'city')) {
+            fieldsCol1.innerHTML = '<strong>These dimensions cannot be combined</strong>';
+            fieldsCol2.innerHTML = '';
+            return;
+        } else if (isItemInArray(selectedDimensions, 'player') && isItemInArray(selectedDimensions, 'region')) {
+            fieldsCol1.innerHTML = '<strong>These dimensions cannot be combined</strong>';
+            fieldsCol2.innerHTML = '';
+            return;
+        } else if (isItemInArray(selectedDimensions, 'player') && isItemInArray(selectedDimensions, 'search_terms')) {
+            fieldsCol1.innerHTML = '<strong>These dimensions cannot be combined</strong>';
+            fieldsCol2.innerHTML = '';
+            return;
         }
         // clear existing field checkboxes
         fieldsCol1.innerHTML = '';
@@ -521,6 +537,7 @@ var BCLS = (function(window, document, aapi_model) {
         deselectFieldsButton.addEventListener('click', function() {
             var i,
                 iMax = fieldsCheckboxes.length;
+            console.log('deselect all', iMax);
             for (i = 0; i < iMax; i += 1) {
                 fieldsCheckboxes[i].removeAttribute('checked');
             }
