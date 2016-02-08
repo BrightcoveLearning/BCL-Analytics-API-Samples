@@ -26,13 +26,12 @@
         padding: 1em;
         }
         .fields-list {
-            border: 1px solid #ccc;
             display: inline-block;
             padding: .5em;
             vertical-align: top;
         }
         textarea {
-            width: 100%;
+            width: 800px;
         }
         </style>
     </head>
@@ -41,9 +40,9 @@
         <p>Testbed to determine what combinations of fields are valid for combinations of dimensions.</p>
         <fieldset>
             <legend>Inputs</legend>
-            <p><strong>Account id:</strong> <input id="account_id" type="text" value="1752604059001"></p>
-            <p><strong>Client id:</strong> <input id="client_id" type="text" size="60" value="c5d0a622-5479-46d8-8d8a-5f034b943fab"></p>
-            <p><strong>Client secret:</strong> <input id="client_secret" type="text" size="60" value="w7NQYu0vUloM4GYYy2SXAxrvyFpt8fwI35qAFZcS13-VIgs0itwKNsAwHOS80sOWKJ1BUwHIvSFG2IbgcxEGKg"></p>
+            <h5>Account id: <input id="account_id" type="text" value="1752604059001"></h5>
+            <h5>Client id: <input id="client_id" type="text" size="60" value="c5d0a622-5479-46d8-8d8a-5f034b943fab"></h5>
+            <h5>Client secret: <input id="client_secret" type="text" size="60" value="w7NQYu0vUloM4GYYy2SXAxrvyFpt8fwI35qAFZcS13-VIgs0itwKNsAwHOS80sOWKJ1BUwHIvSFG2IbgcxEGKg"></h5>
             <p>Dimension to report on:</p>
             <div id="dimensionsCol1" class="fields-list"></div>
             <div id="dimensionsCol2" class="fields-list"></div>
@@ -55,18 +54,16 @@
         </fieldset>
         <fieldset>
             <legend>Outputs</legend>
-            <p><strong>Dimensions param</strong></p>
+            <h5>Dimensions param</h5>
             <pre id="dimensionsParam"></pre>
-            <p><strong>Fields param</strong></p>
+            <h5>Fields param</h5>
             <pre id="fieldsArrayDisplay"></pre>
-            <p class="strong">Earliest <code>from</code> date for this dimension combination</p>
+            <h5>Earliest <code>from</code> date for this dimension combination</h5>
             <pre id="fromDisplay"></pre>
-            <p><strong id="logger"></strong></p>
-            <p><strong>API request:</strong></p>
-            <pre id="apiRequest"></pre>
-            <p><strong>Request method:</strong></p>
-            <pre id="apiMethod"></pre>
-            <p><strong>Response data</strong></p>
+            <h5 id="logger"></h5>
+            <h5>API request:</h5>
+            <textarea id="apiRequest"></textarea>
+            <h5>Response data</h5>
             <pre id="responseData"></pre>
         </fieldset>
 <script src="//docs.brightcove.com/en/video-cloud/analytics-api/assets/aapi-model-v1.js"></script>
@@ -98,7 +95,6 @@ var BCLS = (function(window, document, aapi_model) {
       allButtons              = document.getElementsByTagName('button'),
       getData                 = document.getElementById('getData'),
       apiRequest              = document.getElementById('apiRequest'),
-      apiMethod               = document.getElementById('apiMethod'),
       fieldsArrayDisplay      = document.getElementById('fieldsArrayDisplay'),
       generatedContent        = document.getElementById('generatedContent'),
       responseData            = document.getElementById('responseData'),
@@ -132,35 +128,6 @@ var BCLS = (function(window, document, aapi_model) {
             value: val,
             index: idx
         }
-    }
-
-    /**
-     * gets a collection of selected options for multi-select control
-     * @param  {Element}   sel      the selector element
-     * @param  {Function} [callback] callback to handle individual selected options
-     * @return {Array}  array of selected options
-     */
-    function getSelectedOptions(sel, callback) {
-        var opts = [], opt, i, len;
-
-        // loop through options in select list
-        for (i = 0, len = sel.options.length; i < len; i++) {
-            opt = sel.options[i];
-
-            // check if selected
-            if ( opt.selected ) {
-                // add to array of option elements to return from this function
-                opts.push(opt);
-
-                // invoke optional callback function if provided
-                // and pass the selector and the selected option
-                if (callback) {
-                    fn(sel, opt);
-                }
-            }
-        }
-        // return array containing references to selected option elements
-        return opts;
     }
 
     /**
@@ -265,6 +232,18 @@ var BCLS = (function(window, document, aapi_model) {
     }
 
     /**
+     * updateFieldsDisplay - gets the selected checkboxes and update the fields list display
+     */
+    function updateFieldsDisplay() {
+        if (fieldsToReturn.length > 0) {
+            fieldsArrayDisplay.textContent = 'fields=' + fieldsToReturn.join(',');
+        } else {
+            fieldsArrayDisplay.textContent = '';
+        }
+
+    }
+
+    /**
      * adds dimension options from the aapi_model
      */
     function addDimensionOptions() {
@@ -325,58 +304,12 @@ var BCLS = (function(window, document, aapi_model) {
             text,
             br,
             half;
-        // check for invalid combinations
-        if (isItemInArray(selectedDimensions, 'date') || isItemInArray(selectedDimensions, 'date_hour')) {
-            fieldsCol1.innerHTML = '<strong>The following dimensions cannot be combined <br> with any other dimension: <code>date</code>, <code>date_hour</code></strong>';
-            fieldsCol2.innerHTML = '';
-            return;
-        } else if (isItemInArray(selectedDimensions, 'video') && isItemInArray(selectedDimensions, 'search_terms')) {
-            fieldsCol1.innerHTML = '<strong>These dimensions cannot be combined</strong>';
-            fieldsCol2.innerHTML = '';
-            return;
-        } else if (isItemInArray(selectedDimensions, 'video') && isItemInArray(selectedDimensions, 'destination_path')) {
-            fieldsCol1.innerHTML = '<strong>These dimensions cannot be combined</strong>';
-            fieldsCol2.innerHTML = '';
-            return;
-        } else if (isItemInArray(selectedDimensions, 'player') && isItemInArray(selectedDimensions, 'destination_path')) {
-            fieldsCol1.innerHTML = '<strong>These dimensions cannot be combined</strong>';
-            fieldsCol2.innerHTML = '';
-            return;
-        } else if (isItemInArray(selectedDimensions, 'player') && isItemInArray(selectedDimensions, 'city')) {
-            fieldsCol1.innerHTML = '<strong>These dimensions cannot be combined</strong>';
-            fieldsCol2.innerHTML = '';
-            return;
-        } else if (isItemInArray(selectedDimensions, 'player') && isItemInArray(selectedDimensions, 'region')) {
-            fieldsCol1.innerHTML = '<strong>These dimensions cannot be combined</strong>';
-            fieldsCol2.innerHTML = '';
-            return;
-        } else if (isItemInArray(selectedDimensions, 'player') && isItemInArray(selectedDimensions, 'search_terms')) {
-            fieldsCol1.innerHTML = '<strong>These dimensions cannot be combined</strong>';
-            fieldsCol2.innerHTML = '';
-            return;
-        }
         // clear existing field checkboxes
         fieldsCol1.innerHTML = '';
         fieldsCol2.innerHTML = '';
-        // single or multiple dimensions?
-        iMax = selectedDimensions.length;
-        if (iMax === 1) {
-            dimensionName = selectedDimensions.join('__');
-            // dimensionIndex = findObjectInArray(aapi_model.dimensions, 'name', dimensionName);
-            fieldsArray = aapi_model.combinations[dimensionName].fields;
-        } else {
-            for (i = 0; i < iMax; i += 1) {
-                dimensionName = selectedDimensions[i];
-                dimensionIndex = findObjectInArray(aapi_model.dimensions, 'name', dimensionName);
-                thisDimensionFields = aapi_model.dimensions[dimensionIndex].fields;
-                jMax = thisDimensionFields.length;
-                for (j = 0; j < jMax; j += 1) {
-                    fieldsArray.push(thisDimensionFields[j]);
-                }
-            }
-            // dedupe the array
-            fieldsArray = dedupe(fieldsArray);
-        }
+        dimensionName = selectedDimensions.join('__');
+        // dimensionIndex = findObjectInArray(aapi_model.dimensions, 'name', dimensionName);
+        fieldsArray = aapi_model.combinations[dimensionName].fields;
         // add the return field options
         iMax = fieldsArray.length;
         half = Math.ceil(iMax / 2);
@@ -404,6 +337,14 @@ var BCLS = (function(window, document, aapi_model) {
         }
         // get a reference to the checkbox collection
         fieldsCheckboxes = document.getElementsByName('fieldsChk');
+        // set up event listeners
+        iMax = fieldsCheckboxes.length;
+        for (i = 0; i < iMax; i += 1) {
+            fieldsCheckboxes[i].addEventListener('click', function() {
+                fieldsToReturn = getSelectedCheckboxes(fieldsCheckboxes, fieldsToReturn);
+                updateFieldsDisplay();
+            });
+        }
     }
 
     /**
@@ -419,7 +360,6 @@ var BCLS = (function(window, document, aapi_model) {
         requestData.url = baseURL + endPoint;
         requestData.requestType = 'GET';
         apiRequest.textContent = requestData.url;
-        apiMethod.textContent = requestData.requestType;
         getMediaData(requestData, id);
 }
 
@@ -502,17 +442,7 @@ var BCLS = (function(window, document, aapi_model) {
             selectedDimensions = getSelectedCheckboxes(dimensionCheckboxes, selectedDimensions);
             // get the array of fields from the fieldsCheckboxes
             fieldsToReturn = getSelectedCheckboxes(fieldsCheckboxes, fieldsToReturn);
-            console.log('fields', fieldsToReturn);
-            iMax = fieldsToReturn.length;
-            for (i = 0; i < iMax; i += 1) {
-                if (i === iMax - 1) {
-                    displayFields += '"' + fieldsToReturn[i] + '"';
-                } else {
-                    displayFields += '"' + fieldsToReturn[i] + '", ';
-                }
-            }
-            fieldsArrayDisplay.textContent = displayFields;
-            // get the video count
+            // make the request
             setRequestData('getAnalytics');
         });
 
@@ -554,15 +484,21 @@ var BCLS = (function(window, document, aapi_model) {
             for (i = 0; i < iMax; i += 1) {
                 fieldsCheckboxes[i].setAttribute('checked', 'checked');
             }
+            fieldsToReturn = getSelectedCheckboxes(fieldsCheckboxes, fieldsToReturn);
+            // update fields display
+            updateFieldsDisplay();
         });
 
         deselectFieldsButton.addEventListener('click', function() {
             var i,
                 iMax = fieldsCheckboxes.length;
-            console.log('deselect all', iMax);
             for (i = 0; i < iMax; i += 1) {
                 fieldsCheckboxes[i].removeAttribute('checked');
             }
+            fieldsToReturn = [];
+            console.log('fieldsToReturn', fieldsToReturn);
+            // update fields display
+            updateFieldsDisplay();
         });
 
     }
