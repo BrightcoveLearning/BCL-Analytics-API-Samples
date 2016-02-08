@@ -31,7 +31,10 @@
             vertical-align: top;
         }
         textarea {
-            width: 800px;
+            width: 90%;
+            max-width: 1000px;
+            font-family: hack, monospace;
+            font-size: .8em;
         }
         </style>
     </head>
@@ -54,12 +57,7 @@
         </fieldset>
         <fieldset>
             <legend>Outputs</legend>
-            <h5>Dimensions param</h5>
-            <pre id="dimensionsParam"></pre>
-            <h5>Fields param</h5>
-            <pre id="fieldsArrayDisplay"></pre>
-            <h5>Earliest <code>from</code> date for this dimension combination</h5>
-            <pre id="fromDisplay"></pre>
+            <h5>Earliest <code>from</code> date for this dimension combination: <span style="color:#CC6600" id="fromDisplay"></span></h5>
             <h5 id="logger"></h5>
             <h5>API request:</h5>
             <textarea id="apiRequest"></textarea>
@@ -95,10 +93,10 @@ var BCLS = (function(window, document, aapi_model) {
       allButtons              = document.getElementsByTagName('button'),
       getData                 = document.getElementById('getData'),
       apiRequest              = document.getElementById('apiRequest'),
-      fieldsArrayDisplay      = document.getElementById('fieldsArrayDisplay'),
+      fieldsArrayDisplay,
       generatedContent        = document.getElementById('generatedContent'),
       responseData            = document.getElementById('responseData'),
-      dimensionsParam         = document.getElementById('dimensionsParam'),
+      dimensionsParam,
       fromDisplay             = document.getElementById('fromDisplay'),
       logger                  = document.getElementById('logger'),
       i,
@@ -232,15 +230,19 @@ var BCLS = (function(window, document, aapi_model) {
     }
 
     /**
-     * updateFieldsDisplay - gets the selected checkboxes and update the fields list display
+     * updateRequestDisplay - gets the selected checkboxes and update the fields list display
      */
-    function updateFieldsDisplay() {
-        if (fieldsToReturn.length > 0) {
-            fieldsArrayDisplay.textContent = 'fields=' + fieldsToReturn.join(',');
-        } else {
-            fieldsArrayDisplay.textContent = '';
+    function updateRequestDisplay() {
+        apiRequest.textContent = 'https://analytics.api.brightcove.com/v1/data?accounts=ACCOUNT_ID';
+        if (selectedDimensions.length > 0) {
+            apiRequest.textContent += '&dimensions=' + selectedDimensions.join(',');
         }
-
+        if (fieldsToReturn.length > 0) {
+            apiRequest.textContent += '&fields=' + fieldsToReturn.join(',');
+        }
+        if (isDefined(fromDate)) {
+            
+        }
     }
 
     /**
@@ -342,7 +344,7 @@ var BCLS = (function(window, document, aapi_model) {
         for (i = 0; i < iMax; i += 1) {
             fieldsCheckboxes[i].addEventListener('click', function() {
                 fieldsToReturn = getSelectedCheckboxes(fieldsCheckboxes, fieldsToReturn);
-                updateFieldsDisplay();
+                updateRequestDisplay();
             });
         }
     }
@@ -486,7 +488,7 @@ var BCLS = (function(window, document, aapi_model) {
             }
             fieldsToReturn = getSelectedCheckboxes(fieldsCheckboxes, fieldsToReturn);
             // update fields display
-            updateFieldsDisplay();
+            updateRequestDisplay();
         });
 
         deselectFieldsButton.addEventListener('click', function() {
@@ -498,7 +500,7 @@ var BCLS = (function(window, document, aapi_model) {
             fieldsToReturn = [];
             console.log('fieldsToReturn', fieldsToReturn);
             // update fields display
-            updateFieldsDisplay();
+            updateRequestDisplay();
         });
 
     }
