@@ -30,8 +30,9 @@
             padding: .5em;
             vertical-align: top;
         }
-        textarea {
-            width: 90%;
+        textarea#apiRequest {
+            width: 95%;
+            height: 5em;
             max-width: 1000px;
             font-family: hack, monospace;
             font-size: .8em;
@@ -42,24 +43,22 @@
         <h1>Analytics API Field Tester</h1>
         <p>Testbed to determine what combinations of fields are valid for combinations of dimensions.</p>
         <fieldset>
-            <legend>Inputs</legend>
-            <h5>Account id: <input id="account_id" type="text" value="1752604059001"></h5>
-            <h5>Client id: <input id="client_id" type="text" size="60" value="c5d0a622-5479-46d8-8d8a-5f034b943fab"></h5>
-            <h5>Client secret: <input id="client_secret" type="text" size="60" value="w7NQYu0vUloM4GYYy2SXAxrvyFpt8fwI35qAFZcS13-VIgs0itwKNsAwHOS80sOWKJ1BUwHIvSFG2IbgcxEGKg"></h5>
-            <p>Dimension to report on:</p>
+            <legend>Input</legend>
+            <input id="account_id" type="hidden" value="1752604059001">
+            <h5>Select Dimension(s) to report on:</h5>
             <div id="dimensionsCol1" class="fields-list"></div>
             <div id="dimensionsCol2" class="fields-list"></div>
 
-            <p id="returnFields">Fields to return: <button id="fieldsButton">Select All</button> <button id="deselectFieldsButton">Deselect All</button></p>
+            <h5>Fields to return: <button id="fieldsButton">Select All</button> <button id="deselectFieldsButton">Deselect All</button></h5>
             <div id="fieldsCol1" class="fields-list"></div>
             <div id="fieldsCol2" class="fields-list"></div>
-        <p><button id="getData">Get Analytics Data</button></p>
+        <p><button id="getData">Make a Request with these Options</button> (uses a sample Brightcove account)</p>
         </fieldset>
         <fieldset>
-            <legend>Outputs</legend>
-            <h5>Earliest <code>from</code> date for this dimension combination: <span style="color:#CC6600" id="fromDisplay"></span></h5>
+            <legend>Output</legend>
+            <h5>Earliest <code>from</code> date for this dimension combination: <span style="color:#FF6600" id="fromDisplay"></span></h5>
             <h5 id="logger"></h5>
-            <h5>API request:</h5>
+            <h5>Sample API request:</h5>
             <textarea id="apiRequest"></textarea>
             <h5>Response data</h5>
             <pre id="responseData"></pre>
@@ -67,7 +66,7 @@
 <script src="//docs.brightcove.com/en/video-cloud/analytics-api/assets/aapi-model-v1.js"></script>
 <script>
 var BCLS = (function(window, document, aapi_model) {
-  var proxyURL                = 'https://solutions.brightcove.com/bcls/bcls-proxy/bcls-proxy.php',
+  var proxyURL                = 'https://solutions.brightcove.com/bcls/bcls-proxy/aapi-proxy.php',
       dimension,
       selectedDimensions      = [],
       fromDate,
@@ -79,8 +78,6 @@ var BCLS = (function(window, document, aapi_model) {
       clientSecret,
       searchString,
       account_id              = document.getElementById('account_id'),
-      client_id               = document.getElementById('client_id'),
-      client_secret           = document.getElementById('client_secret'),
       returnFields            = document.getElementById('returnFields'),
       fieldsButton            = document.getElementById('fieldsButton'),
       deselectFieldsButton    = document.getElementById('deselectFieldsButton'),
@@ -241,7 +238,7 @@ var BCLS = (function(window, document, aapi_model) {
             apiRequest.textContent += '&fields=' + fieldsToReturn.join(',');
         }
         if (isDefined(fromDate)) {
-            
+
         }
     }
 
@@ -399,7 +396,7 @@ var BCLS = (function(window, document, aapi_model) {
                 }
             };
         // set up request data
-        requestParams = 'url=' + encodeURIComponent(options.url) + '&requestType=' + options.requestType + '&client_id=' + clientId + '&client_secret=' + clientSecret;
+        requestParams = 'url=' + encodeURIComponent(options.url) + '&requestType=' + options.requestType;
         if (options.requestBody) {
             dataString = JSON.stringify(options.requestBody);
             requestParams += "&requestBody=" + encodeURIComponent(dataString);
@@ -416,7 +413,6 @@ var BCLS = (function(window, document, aapi_model) {
     }
 
     function init() {
-        console.log('init');
         // set up dimensions
         addDimensionOptions();
         // set up fields
@@ -432,14 +428,8 @@ var BCLS = (function(window, document, aapi_model) {
             // make sure arrays are emptied out
             selectedDimensions = [];
             fieldsToReturn = [];
-            if (!isDefined(account_id.value) || !isDefined(client_id) || !isDefined(client_secret)) {
-                window.alert('You must enter an account id, a client id, and a client secret');
-                return;
-            }
             // get account values
             accountId = account_id.value;
-            clientId = client_id.value;
-            clientSecret = client_secret.value;
             // get dimension in case it wasn't changed
             selectedDimensions = getSelectedCheckboxes(dimensionCheckboxes, selectedDimensions);
             // get the array of fields from the fieldsCheckboxes
@@ -469,9 +459,8 @@ var BCLS = (function(window, document, aapi_model) {
                     }
                     dateArray.sort();
                     fromDate = dateArray[dateArray.length - 1];
-                    // display what we have
-                    dimensionsParam.textContent = 'dimensions=' + selectedDimensions.join(',');
-                    fromDisplay.textContent = 'from=' + fromDate;
+                    // display earliest data
+                    fromDisplay.textContent = fromDate;
                 } else {
                     fieldsCol1.innerHTML = '<strong>The dimension combination is not valid</strong>';
                     fieldsCol2.innerHTML = '';
@@ -498,7 +487,6 @@ var BCLS = (function(window, document, aapi_model) {
                 fieldsCheckboxes[i].removeAttribute('checked');
             }
             fieldsToReturn = [];
-            console.log('fieldsToReturn', fieldsToReturn);
             // update fields display
             updateRequestDisplay();
         });
