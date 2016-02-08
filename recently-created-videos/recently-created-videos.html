@@ -87,8 +87,10 @@ var BCLS = (function(window, document, aapi_model) {
       videoIds                = [],
       videoIdSets             = [],
       dimension,
+      selectedDimensions      = [],
       fieldsToReturn          = [],
-      checkboxes,
+      fieldsCheckBoxes,
+      dimensionCheckboxes,
       videoCount              = 0,
       totalVideoCalls         = 0,
       videoCallNumber         = 0,
@@ -103,10 +105,11 @@ var BCLS = (function(window, document, aapi_model) {
       account_id              = document.getElementById('account_id'),
       client_id               = document.getElementById('client_id'),
       client_secret           = document.getElementById('client_secret'),
-      dimensionSelect         = document.getElementById('dimensionSelect'),
       returnFields            = document.getElementById('returnFields'),
       fieldsButton            = document.getElementById('fieldsButton'),
       deselectFieldsButton    = document.getElementById('deselectFieldsButton'),
+      dimensionsCol1          = document.getElementById('dimensionsCol1'),
+      dimensionsCol2          = document.getElementById('dimensionsCol2'),
       fieldsCol1              = document.getElementById('fieldsCol1'),
       fieldsCol2              = document.getElementById('fieldsCol2'),
       dateSelect              = document.getElementById('dateSelect'),
@@ -254,7 +257,7 @@ var BCLS = (function(window, document, aapi_model) {
             fieldsCol2.appendChild(br);
         }
         // get a reference to the checkbox collection
-        checkboxes = document.getElementsByName('fieldsChk');
+        fieldsCheckBoxes = document.getElementsByName('fieldsChk');
     }
 
     /**
@@ -443,7 +446,7 @@ var BCLS = (function(window, document, aapi_model) {
         selectedDateObj = getSelectedValue(dateSelect);
         searchString = 'q=created_at:%2D' + selectedDateObj.value + 'd..';
         // get the array of fields from the checkboxes
-        fieldsToReturn = getSelectedCheckboxes(checkboxes, fieldsToReturn);
+        fieldsToReturn = getSelectedCheckboxes(fieldsCheckBoxes, fieldsToReturn);
         console.log('fields', fieldsToReturn);
         // get the video count
         setRequestData('getCount');
@@ -457,17 +460,17 @@ var BCLS = (function(window, document, aapi_model) {
 
     fieldsButton.addEventListener('click', function() {
         var i,
-            iMax = checkboxes.length;
+            iMax = fieldsCheckBoxes.length;
         for (i = 0; i < iMax; i += 1) {
-            checkboxes[i].setAttribute('checked', 'checked');
+            fieldsCheckBoxes[i].setAttribute('checked', 'checked');
         }
     });
 
     deselectFieldsButton.addEventListener('click', function() {
         var i,
-            iMax = checkboxes.length;
+            iMax = fieldsCheckBoxes.length;
         for (i = 0; i < iMax; i += 1) {
-            checkboxes[i].removeAttribute('checked');
+            fieldsCheckBoxes[i].removeAttribute('checked');
         }
     });
 

@@ -55,14 +55,17 @@
         </fieldset>
         <fieldset>
             <legend>Outputs</legend>
-            <p><strong id="count"></strong></p>
+            <p><strong>Dimensions param</strong></p>
+            <pre id="dimensionsParam"></pre>
+            <p><strong>Fields param</strong></p>
+            <pre id="fieldsArrayDisplay"></pre>
+            <p class="strong">Earliest <code>from</code> date for this dimension combination</p>
+            <pre id="fromDisplay"></pre>
             <p><strong id="logger"></strong></p>
             <p><strong>API request:</strong></p>
             <pre id="apiRequest"></pre>
             <p><strong>Request method:</strong></p>
             <pre id="apiMethod"></pre>
-            <p><strong>Fields Array for the Selected Dimension(s):</strong></p>
-            <pre id="fieldsArrayDisplay"></pre>
             <p><strong>Response data</strong></p>
             <pre id="responseData"></pre>
         </fieldset>
@@ -72,6 +75,7 @@ var BCLS = (function(window, document, aapi_model) {
   var proxyURL                = 'https://solutions.brightcove.com/bcls/bcls-proxy/bcls-proxy.php',
       dimension,
       selectedDimensions      = [],
+      fromDate,
       fieldsToReturn          = [],
       fieldsCheckboxes,
       dimensionCheckboxes,
@@ -79,11 +83,9 @@ var BCLS = (function(window, document, aapi_model) {
       clientId,
       clientSecret,
       searchString,
-      pageSize                = 25,
       account_id              = document.getElementById('account_id'),
       client_id               = document.getElementById('client_id'),
       client_secret           = document.getElementById('client_secret'),
-      dimensionSelect         = document.getElementById('dimensionSelect'),
       returnFields            = document.getElementById('returnFields'),
       fieldsButton            = document.getElementById('fieldsButton'),
       deselectFieldsButton    = document.getElementById('deselectFieldsButton'),
@@ -100,8 +102,9 @@ var BCLS = (function(window, document, aapi_model) {
       fieldsArrayDisplay      = document.getElementById('fieldsArrayDisplay'),
       generatedContent        = document.getElementById('generatedContent'),
       responseData            = document.getElementById('responseData'),
+      dimensionsParam         = document.getElementById('dimensionsParam'),
+      fromDisplay             = document.getElementById('fromDisplay'),
       logger                  = document.getElementById('logger'),
-      videoIds = [],
       i,
       iMax;
 
@@ -246,6 +249,7 @@ var BCLS = (function(window, document, aapi_model) {
         for (i = 0; i < iMax; i++) {
             allButtons[i].setAttribute('disabled', 'disabled');
         }
+        return;
     }
 
     /**
@@ -257,6 +261,7 @@ var BCLS = (function(window, document, aapi_model) {
         for (i = 0; i < iMax; i++) {
             allButtons[i].removeAttribute('disabled');
         }
+        return;
     }
 
     /**
@@ -281,9 +286,6 @@ var BCLS = (function(window, document, aapi_model) {
             input.setAttribute('data-index', 'i');
             input.setAttribute('type', 'checkbox');
             input.setAttribute('value', aapi_model.dimensions[i].name);
-            if (aapi_model.dimensions[i].name === 'video') {
-                input.setAttribute('checked', 'true');
-            }
             text = document.createTextNode(' ' + aapi_model.dimensions[i].name);
             br = document.createElement('br');
             dimensionsCol1.appendChild(input);
@@ -359,9 +361,9 @@ var BCLS = (function(window, document, aapi_model) {
         // single or multiple dimensions?
         iMax = selectedDimensions.length;
         if (iMax === 1) {
-            dimensionName = selectedDimensions[0];
-            dimensionIndex = findObjectInArray(aapi_model.dimensions, 'name', dimensionName);
-            fieldsArray = aapi_model.dimensions[dimensionIndex].fields;
+            dimensionName = selectedDimensions.join('__');
+            // dimensionIndex = findObjectInArray(aapi_model.dimensions, 'name', dimensionName);
+            fieldsArray = aapi_model.combinations[dimensionName].fields;
         } else {
             for (i = 0; i < iMax; i += 1) {
                 dimensionName = selectedDimensions[i];
@@ -476,8 +478,8 @@ var BCLS = (function(window, document, aapi_model) {
         // set up dimensions
         addDimensionOptions();
         // set up fields
-        selectedDimensions = ['video'];
-        addFieldOptions();
+        // selectedDimensions = ['video'];
+        // addFieldOptions();
         // event listeners
         getData.addEventListener('click', function() {
             var i,
@@ -518,11 +520,31 @@ var BCLS = (function(window, document, aapi_model) {
         iMax = dimensionCheckboxes.length;
         for (i = 0; i < iMax; i += 1) {
             dimensionCheckboxes[i].addEventListener('click', function() {
+                var dateArray = [],
+                j,
+                jMax,
+                thisDimension,
+                idx;
                 // empty selected dimensions arrays
                 selectedDimensions = [];
                 selectedDimensions = getSelectedCheckboxes(dimensionCheckboxes, selectedDimensions);
-                console.log('selectedDimensions', selectedDimensions);
-                addFieldOptions();
+                if (aapi_model.combinations.hasOwnProperty(selectedDimensions.join('__'))) {
+                    addFieldOptions();
+                    // get earliest date === latest date for selected dimensions
+                    jMax = selectedDimensions.length;
+                    for (j = 0; j < jMax; j += 1) {
+                        dateArray = dateArray.concat(aapi_model.combinations[selectedDimensions[j]].from)
+                    }
+                    dateArray.sort();
+                    fromDate = dateArray[dateArray.length - 1];
+                    // display what we have
+                    dimensionsParam.textContent = 'dimensions=' + selectedDimensions.join(',');
+                    fromDisplay.textContent = 'from=' + fromDate;
+                } else {
+                    fieldsCol1.innerHTML = '<strong>The dimension combination is not valid</strong>';
+                    fieldsCol2.innerHTML = '';
+                }
+
             });
         }
 
