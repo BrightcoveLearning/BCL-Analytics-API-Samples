@@ -26,13 +26,16 @@
         padding: 1em;
         }
         .fields-list {
-            border: 1px solid #ccc;
             display: inline-block;
             padding: .5em;
             vertical-align: top;
         }
-        textarea {
-            width: 100%;
+        textarea#apiRequest {
+            width: 95%;
+            height: 5em;
+            max-width: 1000px;
+            font-family: hack, monospace;
+            font-size: .8em;
         }
         </style>
     </head>
@@ -41,14 +44,17 @@
         <p>This app gets Analytics data for videos that have been added to Video Cloud over some recent period (which you define in the inputs). Note that this app only returns reports on a single dimension, though it could be modified to report on multiple dimensions.</p>
         <fieldset>
             <legend>Inputs</legend>
-            <p><strong>Account id:</strong> <input id="account_id" type="text" value="1752604059001"></p>
-            <p><strong>Client id:</strong> <input id="client_id" type="text" size="60" value="c5d0a622-5479-46d8-8d8a-5f034b943fab"></p>
-            <p><strong>Client secret:</strong> <input id="client_secret" type="text" size="60" value="w7NQYu0vUloM4GYYy2SXAxrvyFpt8fwI35qAFZcS13-VIgs0itwKNsAwHOS80sOWKJ1BUwHIvSFG2IbgcxEGKg"></p>
-            <p>Dimension to report on: <select name="dimensionSelect" id="dimensionSelect"></select></p>
-            <p id="returnFields">Fields to return: <button id="fieldsButton">Select All</button> <button id="deselectFieldsButton">Deselect All</button></p>
+            <h5><strong>Account id:</strong> <input id="account_id" type="text" value="1752604059001"></h5>
+            <h5><strong>Client id:</strong> <input id="client_id" type="text" size="60" value="c5d0a622-5479-46d8-8d8a-5f034b943fab"></h5>
+            <h5><strong>Client secret:</strong> <input id="client_secret" type="text" size="60" value="w7NQYu0vUloM4GYYy2SXAxrvyFpt8fwI35qAFZcS13-VIgs0itwKNsAwHOS80sOWKJ1BUwHIvSFG2IbgcxEGKg"></h5>
+            <h5>Select Dimension(s) to report on:</h5>
+            <div id="dimensionsCol1" class="fields-list"></div>
+            <div id="dimensionsCol2" class="fields-list"></div>
+
+            <h5>Fields to return: <button id="fieldsButton">Select All</button> <button id="deselectFieldsButton">Deselect All</button></h5>
             <div id="fieldsCol1" class="fields-list"></div>
             <div id="fieldsCol2" class="fields-list"></div>
-            <p>Get videos created in the past
+            <h5>Get videos created in the past
                 <select name="dateSelect" id="dateSelect">
                     <option value="1">1</option>
                     <option value="2">2</option>
@@ -64,18 +70,18 @@
                     <option value="365">365</option>
                 </select>
                 days
-        </p>
+        </h5>
         <p><button id="getData">Get Analytics Data</button></p>
         </fieldset>
         <fieldset>
             <legend>Outputs</legend>
-            <p><strong id="count"></strong></p>
-            <p><strong id="logger"></strong></p>
-            <p><strong>API request:</strong></p>
-                <pre id="apiRequest"></pre>
-                <p><strong>Request method:</strong></p>
-                <pre id="apiMethod"></pre>
-                <p><strong>Response data</strong></p>
+            <h5><strong id="count"></strong></h5>
+            <h5><strong id="logger"></strong></h5>
+            <h5><strong>API request:</strong></h5>
+            <textarea id="apiRequest"></textarea>
+            <h5><strong>Request method:</strong></h5>
+            <pre id="apiMethod"></pre>
+            <h5><strong>Response data</strong></h5>
             <pre id="responseData"></pre>
         </fieldset>
 <script src="//docs.brightcove.com/en/video-cloud/analytics-api/assets/aapi-model.js"></script>
@@ -148,6 +154,66 @@ var BCLS = (function(window, document, aapi_model) {
             value: val,
             index: idx
         }
+    }
+
+    /**
+     * determines whether specified item is in an array
+     *
+     * @param {array} array to check
+     * @param {string} item to check for
+     * @return {boolean} true if item is in the array, else false
+     */
+    function isItemInArray(arr, item) {
+        var i,
+            iMax = arr.length;
+        for (i = 0; i < iMax; i++) {
+            if (arr[i] === item) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    /**
+     * find index of an object in array of objects
+     * based on some property value
+     *
+     * @param {array} targetArray array to search
+     * @param {string} objProperty object property to search
+     * @param {string} value of the property to search for
+     * @return {integer} index of first instance if found, otherwise returns -1
+    */
+    function findObjectInArray(targetArray, objProperty, value) {
+        var i, totalItems = targetArray.length, objFound = false;
+        for (i = 0; i < totalItems; i++) {
+            if (targetArray[i][objProperty] === value) {
+                objFound = true;
+                return i;
+            }
+        }
+        if (objFound === false) {
+            return -1;
+        }
+    }
+
+    /**
+     * dedupe a simple array of strings or numbers
+     * @param {array} arr the array to be deduped
+     * @return {array} the deduped array
+     */
+    function dedupe(arr) {
+        var i,
+            len = arr.length,
+            out = [],
+            obj = {};
+
+        for (i = 0;i < len; i++) {
+            obj[arr[i]] = 0;
+        }
+        for (i in obj) {
+            out.push(i);
+        }
+        return out;
     }
 
     /**
