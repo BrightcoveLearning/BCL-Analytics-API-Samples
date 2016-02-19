@@ -44,9 +44,9 @@
         <p>This app gets Analytics data for videos that have been added to Video Cloud over some recent period (which you define in the inputs). Note that this app only returns reports on a single dimension, though it could be modified to report on multiple dimensions.</p>
         <fieldset>
             <legend>Inputs</legend>
-            <h5><strong>Account id:</strong> <input id="account_id" type="text" value="1752604059001"></h5>
-            <h5><strong>Client id:</strong> <input id="client_id" type="text" size="60" value="c5d0a622-5479-46d8-8d8a-5f034b943fab"></h5>
-            <h5><strong>Client secret:</strong> <input id="client_secret" type="text" size="60" value="w7NQYu0vUloM4GYYy2SXAxrvyFpt8fwI35qAFZcS13-VIgs0itwKNsAwHOS80sOWKJ1BUwHIvSFG2IbgcxEGKg"></h5>
+            <h5><strong>Account id:</strong> <input id="account_id" type="text" placeholder="1752604059001"></h5>
+            <h5><strong>Client id:</strong> <input id="client_id" type="text" size="60" placeholder="c5d0a622-5479-46d8-8d8a-5f034b943fab"></h5>
+            <h5><strong>Client secret:</strong> <input id="client_secret" type="text" size="60" placeholder="w7NQYu0vUloM4GYYy2SXAxrvyFpt8fwI35qAFZcS13-VIgs0itwKNsAwHOS80sOWKJ1BUwHIvSFG2IbgcxEGKg"></h5>
             <h5>Select Dimension(s) to report on:</h5>
             <div id="dimensionsCol1" class="fields-list"></div>
             <div id="dimensionsCol2" class="fields-list"></div>
@@ -89,7 +89,7 @@
 var BCLS = (function(window, document, aapi_model) {
   var cmsBaseURL              = 'https://cms.api.brightcove.com/v1/accounts/',
       aapiBaseURL             = 'https://analytics.api.brightcove.com/v1/data',
-      proxyURL                = 'https://solutions.brightcove.com/bcls/bcls-proxy/bcls-proxy.php',
+      proxyURL                = 'https://solutions.brightcove.com/bcls/bcls-proxy/aapi-proxy.php',
       videoIds                = [],
       videoIdSets             = [],
       dimension,
@@ -244,7 +244,15 @@ var BCLS = (function(window, document, aapi_model) {
     function getSelectedCheckboxes(checkboxCollection) {
         var i,
             tmpArray = [],
+            iMax;
+        if (checkboxCollection.hasOwnProperty('length')) {
             iMax = checkboxCollection.length;
+            for (i = 0; i < iMax; i += 1) {
+                if (checkboxCollection[i].checked) {
+                    tmpArray.push(checkboxCollection[i].value);
+                }
+            }
+        }
         for (i = 0; i < iMax; i += 1) {
             if (checkboxCollection[i].checked) {
                 tmpArray.push(checkboxCollection[i].value);
@@ -572,10 +580,10 @@ var BCLS = (function(window, document, aapi_model) {
                 }
             };
         // set up request data
-        requestParams = 'url=' + encodeURIComponent(options.url) + '&requestType=' + options.requestType + '&client_id=' + clientId + '&client_secret=' + clientSecret;
-        if (options.requestBody) {
-            dataString = JSON.stringify(options.requestBody);
-            requestParams += "&requestBody=" + encodeURIComponent(dataString);
+        // set up request data
+        requestParams = 'url=' + encodeURIComponent(options.url) + '&requestType=' + options.requestType;
+        if (isDefined(clientId) && isDefined(clientSecret)) {
+            requestParams += '&client_id=' + clientId + '&client_secret=' + clientSecret;
         }
 
         // set response handler
@@ -608,16 +616,25 @@ var BCLS = (function(window, document, aapi_model) {
                 selectedDimensions = [];
                 fieldsToReturn = [];
             // get account values
-            accountId = account_id.value;
+            accountId = isDefined(account_id.value) ? account_id.value : '1752604059001';
             clientId = client_id.value;
             clientSecret = client_secret.value;
             // get dimension in case it wasn't changed
+            // get dimension in case it wasn't changed
             selectedDimensions = getSelectedCheckboxes(dimensionCheckboxes);
+            // in case nothing was selected
+            if (selectedDimensions.length === 0) {
+                selectedDimensions = ['video'];
+            }
             // get date range in case it wasn't changed
             selectedDateObj = getSelectedValue(dateSelect);
             searchString = 'q=created_at:%2D' + selectedDateObj.value + 'd..';
             // get the array of fields from the fieldsCheckboxes
             fieldsToReturn = getSelectedCheckboxes(fieldsCheckboxes);
+            if (fieldsToReturn.length === 0) {
+                // in case nothing was selected
+                fieldsToReturn = ['video_view'];
+            }
             // make the request
             // get the video count
             setRequestData('getCount');
