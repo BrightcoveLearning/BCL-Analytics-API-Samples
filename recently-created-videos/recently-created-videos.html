@@ -85,7 +85,7 @@
             <pre id="responseData"></pre>
         </fieldset>
 <script src="//docs.brightcove.com/en/video-cloud/analytics-api/assets/aapi-model-v1.js"></script>
-<script>
+<script id="pageScript">
 var BCLS = (function(window, document, aapi_model) {
   var cmsBaseURL              = 'https://cms.api.brightcove.com/v1/accounts/',
       aapiBaseURL             = 'https://analytics.api.brightcove.com/v1/data',
@@ -301,6 +301,7 @@ var BCLS = (function(window, document, aapi_model) {
             jMax,
             option,
             input,
+            label,
             text,
             br,
             half;
@@ -320,26 +321,34 @@ var BCLS = (function(window, document, aapi_model) {
         half = Math.ceil(iMax / 2);
         for (i = 0; i < half; i += 1) {
             input = document.createElement('input');
+            label = document.createElement('lable');
             input.setAttribute('name', 'dimensionsChk');
+            input.setAttribute('id', 'dim' + dimensionsArray[i].name);
             input.setAttribute('data-index', 'i');
             input.setAttribute('type', 'checkbox');
             input.setAttribute('value', dimensionsArray[i].name);
+            label.setAttribute('for', 'dim' + dimensionsArray[i].name);
             text = document.createTextNode(' ' + dimensionsArray[i].name);
             br = document.createElement('br');
             dimensionsCol1.appendChild(input);
-            dimensionsCol1.appendChild(text);
+            dimensionsCol1.appendChild(label);
+            label.appendChild(text);
             dimensionsCol1.appendChild(br);
             }
         for (i = half; i < iMax; i += 1) {
             input = document.createElement('input');
+            label = document.createElement('lable');
             input.setAttribute('name', 'dimensionsChk');
+            input.setAttribute('id', 'dim' + dimensionsArray[i].name);
             input.setAttribute('data-index', 'i');
             input.setAttribute('type', 'checkbox');
             input.setAttribute('value', dimensionsArray[i].name);
+            label.setAttribute('for', 'dim' + dimensionsArray[i].name);
             text = document.createTextNode(' ' + dimensionsArray[i].name);
             br = document.createElement('br');
             dimensionsCol2.appendChild(input);
-            dimensionsCol2.appendChild(text);
+            dimensionsCol2.appendChild(label);
+            label.appendChild(text);
             dimensionsCol2.appendChild(br);
         }
         // get a reference to the checkbox collection
@@ -362,6 +371,7 @@ var BCLS = (function(window, document, aapi_model) {
             j,
             jMax,
             input,
+            label,
             text,
             br,
             half;
@@ -378,24 +388,32 @@ var BCLS = (function(window, document, aapi_model) {
         half = Math.ceil(iMax / 2);
         for (i = 0; i < half; i += 1) {
             input = document.createElement('input');
+            label = document.createElement('label');
             input.setAttribute('name', 'fieldsChk');
+            input.setAttribute('id', 'field' + fieldsArray[i]);
             input.setAttribute('type', 'checkbox');
             input.setAttribute('value', fieldsArray[i]);
+            label.setAttribute('for', 'field' + fieldsArray[i]);
             text = document.createTextNode(' ' + fieldsArray[i]);
             br = document.createElement('br');
             fieldsCol1.appendChild(input);
-            fieldsCol1.appendChild(text);
+            fieldsCol1.appendChild(label);
+            label.appendChild(text);
             fieldsCol1.appendChild(br);
         }
         for (i = half; i < iMax; i += 1) {
             input = document.createElement('input');
+            label = document.createElement('label');
             input.setAttribute('name', 'fieldsChk');
+            input.setAttribute('id', 'field' + fieldsArray[i]);
             input.setAttribute('type', 'checkbox');
             input.setAttribute('value', fieldsArray[i]);
+            label.setAttribute('for', 'field' + fieldsArray[i]);
             text = document.createTextNode(' ' + fieldsArray[i]);
             br = document.createElement('br');
             fieldsCol2.appendChild(input);
-            fieldsCol2.appendChild(text);
+            fieldsCol2.appendChild(label);
+            label.appendChild(text);
             fieldsCol2.appendChild(br);
         }
         // get a reference to the checkbox collection
